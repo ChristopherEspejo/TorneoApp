@@ -21,7 +21,12 @@ const TournamentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Match'
   }],
+  roundMatches: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Match'
+  }],
   winners: [{
+    _id: false,
     matchId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Match'

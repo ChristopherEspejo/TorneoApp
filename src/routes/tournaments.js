@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const tournamentController = require('../controllers/tournamentController');
+const tournamentController = require('../controllers/tournamentsController');
 
 // Crear un torneo
 router.post('/', tournamentController.createTournament);
@@ -19,5 +19,11 @@ router.put('/:tournamentId/matches/:matchId/register-result', tournamentControll
 
 // Generar la siguiente ronda del torneo
 router.post('/:id/generate-next-round', tournamentController.generateNextRound);
+
+// Obtener todos los torneos creados
+router.get('/', tournamentController.getTournaments);
+
+// Obtener un torneo específico
+router.get('/:id', tournamentController.getTournament);
 
 module.exports = router;
