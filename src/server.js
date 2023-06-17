@@ -1,13 +1,15 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const app = express();
+const mongoose = require('mongoose');
+const morgan = require('morgan');
 const dbConfig = require('./config/db.config')
 const usersRouter = require('./routes/users')
 const teamsRouter = require('./routes/teams')
 const playerSearchesRouter = require('./routes/playerSearches')
 const tournamentsRouter = require('./routes/tournaments')
 
-
+// Middleware Morgan para el registro de solicitudes
+app.use(morgan('combined'));
 // Conexión a MongoDB
 mongoose.connect(dbConfig.url, { 
     useNewUrlParser: true, 
