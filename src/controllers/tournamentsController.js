@@ -2,11 +2,15 @@ const User = require('../models/User');
 const Tournament = require('../models/Tournament');
 const Team = require('../models/Team');
 const Match = require('../models/Match');
+// Importa la función de aleatorización
+const { shuffle } = require('./utils');
+
+// ...
 
 exports.createTournament = async (req, res) => {
   const { name } = req.body;
-  const creatorId = req.user.id; // Obtener el ID del usuario autenticado
-
+  // const creatorId = req.user.id; // Obtener el ID del usuario autenticado
+    const creatorId = '6486bda502b051b2e5865e0d'
   try {
     const creator = await User.findById(creatorId);
     if (!creator) {
@@ -57,10 +61,7 @@ exports.addTeamToTournament = async (req, res) => {
   }
 };
 
-// Importa la función de aleatorización
-const { shuffle } = require('./utils');
 
-// ...
 
 exports.startTournament = async (req, res) => {
   const tournamentId = req.params.id;
@@ -71,9 +72,9 @@ exports.startTournament = async (req, res) => {
       return res.status(404).json({ message: 'Torneo no encontrado' });
     }
 
-    if (tournament.created_by.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Acceso no autorizado' });
-    }
+    // if (tournament.created_by.toString() !== req.user.id) {
+    //   return res.status(403).json({ message: 'Acceso no autorizado' });
+    // }
 
     const teams = tournament.teams;
     const totalTeams = teams.length;
@@ -85,35 +86,23 @@ exports.startTournament = async (req, res) => {
     // Aleatorizar el orden de los equipos
     const shuffledTeams = shuffle(teams);
 
-    const rounds = Math.ceil(Math.log2(totalTeams));
+    const totalMatches = totalTeams / 2;
 
-    // Generar los partidos
-    let matches = [];
-    let currentRound = 1;
-    let matchIndex = 0;
+    // Generar los partidos de la primera ronda
+    const matches = [];
 
-    while (currentRound <= rounds) {
-      const totalMatches = Math.pow(2, rounds - currentRound);
-      const matchesInRound = [];
+    for (let i = 0; i < totalMatches; i++) {
+      const team1 = shuffledTeams[i * 2];
+      const team2 = shuffledTeams[i * 2 + 1];
 
-      for (let i = 0; i < totalMatches; i++) {
-        const team1 = shuffledTeams[matchIndex];
-        const team2 = shuffledTeams[matchIndex + 1];
+      const match = new Match({
+        round: 1, // Primera ronda
+        team1,
+        team2
+      });
 
-        const match = new Match({
-          round: currentRound,
-          team1,
-          team2
-        });
-
-        matchesInRound.push(match);
-        matchIndex += 2;
-      }
-
-      matches.push(...matchesInRound);
-      currentRound++;
+      matches.push(match);
     }
-
     // Guardar los partidos en la base de datos
     const savedMatches = await Match.insertMany(matches);
 
@@ -128,127 +117,170 @@ exports.startTournament = async (req, res) => {
 };
 
 exports.editMatches = async (req, res) => {
-    const tournamentId = req.params.id;
-    const { matches } = req.body;
-  
-    try {
-      const tournament = await Tournament.findById(tournamentId);
-      if (!tournament) {
-        return res.status(404).json({ message: 'Torneo no encontrado' });
-      }
-  
-      if (tournament.created_by.toString() !== req.user.id) {
-        return res.status(403).json({ message: 'Acceso no autorizado' });
-      }
-  
-      if (tournament.winners.length > 0) {
-        return res.status(400).json({ message: 'No se puede editar los partidos si ya hay ganadores' });
-      }
-  
-      tournament.matches = matches;
-      const updatedTournament = await tournament.save();
-  
-      res.json(updatedTournament);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+  const tournamentId = req.params.id;
+  const { matches } = req.body;
+
+  try {
+    const tournament = await Tournament.findById(tournamentId);
+    if (!tournament) {
+      return res.status(404).json({ message: 'Torneo no encontrado' });
     }
-  };
+
+    // if (tournament.created_by.toString() !== req.user.id) {
+    //   return res.status(403).json({ message: 'Acceso no autorizado' });
+    // }
+
+    if (tournament.winners.length > 0) {
+      return res.status(400).json({ message: 'No se puede editar los partidos si ya hay ganadores' });
+    }
+
+    // Recorrer los partidos y actualizar los equipos correspondientes
+    for (let i = 0; i < matches.length; i++) {
+      const { match, team1, team2 } = matches[i];
+      const matchToUpdate = await Match.findById(match);
+      
+      if (!matchToUpdate) {
+        return res.status(404).json({ message: `Partido ${match} no encontrado` });
+      }
+
+      matchToUpdate.team1 = team1;
+      matchToUpdate.team2 = team2;
+      
+      await matchToUpdate.save();
+    }
+
+    res.json({ message: 'Partidos editados exitosamente' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
 
 exports.registerResult = async (req, res) => {
-    const tournamentId = req.params.tournamentId;
-    const matchId = req.params.matchId;
-    const { result } = req.body;
+  const tournamentId = req.params.tournamentId;
+  const matchId = req.params.matchId;
+  const { teamId, result } = req.body;
+
+  try {
+    const tournament = await Tournament.findById(tournamentId);
+    if (!tournament) {
+      return res.status(404).json({ message: 'Torneo no encontrado' });
+    }
+
+    const match = await Match.findById(matchId);
+    if (!match) {
+      return res.status(404).json({ message: 'Partido no encontrado' });
+    }
+
+    match.result = result;
+    const updatedMatch = await match.save();
+
+    // Verificar si ya existe un ganador con el mismo matchId
+    const existingWinner = tournament.winners.find(winner => winner.matchId.toString() === matchId);
+    if (existingWinner) {
+      return res.status(400).json({ message: 'El partido ya tiene un ganador registrado' });
+    }
+
+    tournament.winners.push({ matchId, teamId }); // Agregar un nuevo ganador al arreglo
+
+    // Verificar si todos los partidos de la ronda actual tienen un resultado registrado
+    const roundMatches = await Match.find({ tournament: tournamentId, round: match.round });
+    const isRoundComplete = roundMatches.every(match => !!match.result);
+
+    tournament.isRoundComplete = isRoundComplete;
+
+    const updatedTournament = await tournament.save();
+
+    res.json(updatedMatch);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.generateNextRound = async (req, res) => {
+  const tournamentId = req.params.id;
+
+  try {
+    const tournament = await Tournament.findById(tournamentId).populate('winners');
+    console.log(tournament)
+    if (!tournament) {
+      return res.status(404).json({ message: 'Torneo no encontrado' });
+    }
+
+    const currentRound = tournament.rounds;
+    const roundMatches = await Match.find({ tournament: tournamentId, round: currentRound });
+    const isRoundComplete = roundMatches.every(match => !!match.result);
+
+    if (!isRoundComplete) {
+      return res.status(400).json({ message: 'La ronda actual no está completa' });
+    }
+
+    if (tournament.winners.length === 1 && tournament.isRoundComplete) {
+      return res.json({ message: 'El torneo ha concluido', winner: tournament.winners[0].teamId });
+    }
+
+    const nextRound = currentRound + 1;
+
+    const team1 = tournament.winners[0].teamId;
+    const team2 = tournament.winners[1].teamId;
+
+    const match = new Match({
+      round: nextRound,
+      team1,
+      team2
+    });
+
+    const savedMatch = await match.save();
+
+    tournament.matches.push(savedMatch._id);
+    tournament.winners = [];
+    tournament.isRoundComplete = false;
+    tournament.rounds += 1;
+    tournament.roundMatches = [savedMatch._id];
+
+    const updatedTournament = await tournament.save();
+
+    res.json(updatedTournament);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+  exports.getTournaments = async (req, res) => {
+    try {
+      const tournaments = await Tournament.find();
+      res.json(tournaments);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  };
+  
+  exports.getTournament = async (req, res) => {
+    const tournamentId = req.params.id;
   
     try {
       const tournament = await Tournament.findById(tournamentId);
       if (!tournament) {
         return res.status(404).json({ message: 'Torneo no encontrado' });
       }
-  
-      if (tournament.created_by.toString() !== req.user.id) {
-        return res.status(403).json({ message: 'Acceso no autorizado' });
-      }
-  
-      const match = await Match.findById(matchId);
-      if (!match) {
-        return res.status(404).json({ message: 'Partido no encontrado' });
-      }
-  
-      match.result = result;
-      const updatedMatch = await match.save();
-  
-      // Verificar si todos los partidos de la ronda actual tienen un resultado registrado
-      const roundMatches = await Match.find({ tournament: tournamentId, round: match.round });
-      const isRoundComplete = roundMatches.every(match => !!match.result);
-  
-      if (isRoundComplete) {
-        tournament.isRoundComplete = true;
-      }
-  
-      const updatedTournament = await tournament.save();
-  
-      res.json(updatedMatch);
+      res.json(tournament);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   };
   
-  exports.generateNextRound = async (req, res) => {
-    const tournamentId = req.params.id;
-  
-    try {
-      const tournament = await Tournament.findById(tournamentId).populate('winners');
-      if (!tournament) {
-        return res.status(404).json({ message: 'Torneo no encontrado' });
-      }
-  
-      if (tournament.created_by.toString() !== req.user.id) {
-        return res.status(403).json({ message: 'Acceso no autorizado' });
-      }
-  
-      const currentRound = Math.max(...tournament.winners.map(winner => winner.round));
-      const winnersOfCurrentRound = tournament.winners.filter(winner => winner.round === currentRound);
-  
-      if (winnersOfCurrentRound.length < 2) {
-        return res.status(400).json({ message: 'No hay suficientes ganadores para generar la siguiente ronda' });
-      }
-  
-      // Verificar si la ronda actual está completa
-      const roundMatches = await Match.find({ tournament: tournamentId, round: currentRound });
-      const isRoundComplete = roundMatches.every(match => !!match.result);
-  
-      if (!isRoundComplete) {
-        return res.status(400).json({ message: 'La ronda actual no está completa' });
-      }
-  
-      const nextRound = currentRound + 1;
-      const matchesInNextRound = [];
-  
-      for (let i = 0; i < winnersOfCurrentRound.length; i += 2) {
-        const team1 = winnersOfCurrentRound[i].teamId;
-        const team2 = winnersOfCurrentRound[i + 1].teamId;
-  
-        const match = new Match({
-          round: nextRound,
-          team1,
-          team2
-        });
-  
-        matchesInNextRound.push(match);
-      }
-  
-      const savedMatches = await Match.insertMany(matchesInNextRound);
-  
-      tournament.matches = savedMatches.map(match => match._id);
-      const updatedTournament = await tournament.save();
-  
-      // Reiniciar la variable isRoundComplete a false
-      updatedTournament.isRoundComplete = false;
-      await updatedTournament.save();
-  
-      res.json(updatedTournament);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  };
-  
+ 
