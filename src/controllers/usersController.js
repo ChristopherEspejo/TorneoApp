@@ -1,21 +1,29 @@
 const User = require('../models/User');
 
+const admin = require('firebase-admin');
+
 exports.createUser = async (req, res) => {
-    const { name, username, email, password, role, age, position, location } = req.body;
+    const { name, username, email, role, age, position, location } = req.body;
   
     try {
-      // Verificar si ya existe un usuario con el mismo nombre de usuario
-     
+      // El UID del usuario se extrae de los datos del token que están en req.user.uid
+      const uid = req.user.uid;
+  
+      // Verificar si ya existe un usuario con el mismo nombre de usuario o email
+      const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+      if (existingUser) {
+        return res.status(400).json({ message: 'El nombre de usuario o email ya está en uso' });
+      }
   
       const user = new User({
         name,
         username,
         email,
-        password,
         role,
         age,
         position,
-        location
+        location,
+        uid // Guardar el UID del usuario de Firebase en el campo 'uid'
       });
   
       const newUser = await user.save();
@@ -24,6 +32,8 @@ exports.createUser = async (req, res) => {
       res.status(400).json({ message: err.message });
     }
   };
+  
+
 
 
 
