@@ -1,0 +1,20 @@
+# Ignorar archivos específicos
+
+
+# Ignorar todos los archivos con una extensión específica
+
+
+# Ignorar directorios
+
+
+# Ignorar archivos generados por IDEs o editores de texto
+.vscode/
+.idea/
+
+# Ignorar archivos de compilación o generados por lenguajes de programación
+/node_modules/
+/dist/
+node_modules
+
+# Ignorar archivos de configuración sensibles
+
