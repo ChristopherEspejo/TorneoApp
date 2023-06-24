@@ -11,6 +11,7 @@
 .vscode/
 .idea/
 
+
 # Ignorar archivos de compilación o generados por lenguajes de programación
 /node_modules/
 /dist/
@@ -18,3 +19,4 @@ node_modules
 
 # Ignorar archivos de configuración sensibles
 
+serviceAccountKey.json
