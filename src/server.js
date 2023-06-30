@@ -44,7 +44,7 @@ const authenticate = (req, res, next) => {
 
 
 // Escuchando en el puerto
-const port =  3000;
+const port = process.env.PORT || 3000;
 
 // Añade el middleware 'authenticate' en las rutas que requieran autenticación
 app.use('/api/teams', authenticate, teamsRouter);
