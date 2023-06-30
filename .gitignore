@@ -10,7 +10,7 @@
 # Ignorar archivos generados por IDEs o editores de texto
 .vscode/
 .idea/
-
+.env
 
 # Ignorar archivos de compilación o generados por lenguajes de programación
 /node_modules/
