@@ -47,6 +47,7 @@ const authenticate = (req, res, next) => {
 const port =  3000;
 
 // Añade el middleware 'authenticate' en las rutas que requieran autenticación
+app.use('/api', ()=>{console.log('Hello world')});
 app.use('/api/teams', authenticate, teamsRouter);
 app.use('/api/users', authenticate, usersRouter);
 app.use('/api/teams', authenticate, teamsRouter);
