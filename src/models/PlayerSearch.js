@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const PlayerSearchSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    default: 'Mi Partido de Futbol'
+  },
   position_needed: {
     type: String,
     required: true

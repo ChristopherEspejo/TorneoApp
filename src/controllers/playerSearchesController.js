@@ -3,6 +3,7 @@ const User = require('../models/User');
 
 exports.createSearch = async (req, res) => {
   const {
+    title,
     position_needed,
     match_date,
     match_time,
@@ -24,8 +25,9 @@ exports.createSearch = async (req, res) => {
     }
 
     const newSearch = new PlayerSearch({
+      title: title || 'Mi Partido de Futbol',
       position_needed,
-      created_by: createdBy._id,  // Asignar el ID del usuario obtenido
+      created_by: createdBy._id,
       match_date,
       match_time,
       field_rental_payment,
