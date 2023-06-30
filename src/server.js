@@ -47,12 +47,24 @@ const authenticate = (req, res, next) => {
 const port =  3000;
 
 // Añade el middleware 'authenticate' en las rutas que requieran autenticación
-app.use('/api', ()=>{console.log('Hello world')});
 app.use('/api/teams', authenticate, teamsRouter);
 app.use('/api/users', authenticate, usersRouter);
 app.use('/api/teams', authenticate, teamsRouter);
 app.use('/api/playerSearches', authenticate, playerSearchesRouter);
 app.use('/api/tournaments',authenticate, tournamentsRouter);
+app.use(
+  (err, req, res, _) => {
+    return res.status(err.statusCode || 500).json({
+      status: "error",
+      statusCode: err.statusCode,
+      message: err.message,
+    });
+  }
+);
+app.get("*", (_, res) => {
+  //res.sendFile(path.resolve(__dirname, "public/index.html"));
+  res.send('Hello World');
+});
 
 // Middleware para imprimir contenido descifrado del token en la consola
 app.use((req, res, next) => {
