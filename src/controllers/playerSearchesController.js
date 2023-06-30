@@ -4,7 +4,6 @@ const User = require('../models/User');
 exports.createSearch = async (req, res) => {
   const {
     position_needed,
-    created_by,
     match_date,
     match_time,
     field_rental_payment,
@@ -13,18 +12,28 @@ exports.createSearch = async (req, res) => {
     description
   } = req.body;
 
-  const newSearch = new PlayerSearch({
-    position_needed,
-    created_by,
-    match_date,
-    match_time,
-    field_rental_payment,
-    location,
-    address,
-    description
-  });
+  // Obtener el UID del usuario del token
+  const uid = req.user.uid;
 
   try {
+    // Buscar el usuario por el UID y obtener su ID
+    const createdBy = await User.findOne({ uid }).select('_id');
+
+    if (!createdBy) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    const newSearch = new PlayerSearch({
+      position_needed,
+      created_by: createdBy._id,  // Asignar el ID del usuario obtenido
+      match_date,
+      match_time,
+      field_rental_payment,
+      location,
+      address,
+      description
+    });
+
     const savedSearch = await newSearch.save();
     res.json(savedSearch);
   } catch (err) {
@@ -88,16 +97,21 @@ exports.registerToSearch = async (req, res) => {
       return res.status(404).json({ message: 'Búsqueda no encontrada' });
     }
 
-    const user = await User.findById(req.body.userId);
+    // Obtener el ID del usuario a partir del token
+    const { uid } = req.user;
+    
+    // Buscar el usuario por el UID en la base de datos
+    const user = await User.findOne({ uid });
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // Actualizar la búsqueda con el ID del jugador
-    search.player_interested = req.body.userId;
+    // Actualizar la búsqueda con el ID del jugador interesado
+    search.player_interested = user._id; // Usar el ID del usuario encontrado
     const updatedSearch = await search.save();
     res.json(updatedSearch);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
