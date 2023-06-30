@@ -13,7 +13,7 @@
 .env
 
 # Ignorar archivos de compilación o generados por lenguajes de programación
-
+node_modules
 
 # Ignorar archivos de configuración sensibles
 
