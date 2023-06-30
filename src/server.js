@@ -74,7 +74,7 @@ app.use((req, res, next) => {
 
 mongoose.connect(dbConfig.url, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
-    app.listen(port, () => console.log(`Escuchando en el puerto ${port}...`));
+    app.listen(port , "0.0.0.0", () => console.log(`Escuchando en el puerto ${port}...`));
     console.log('Conexión a MongoDB exitosa');
   })
   .catch(err => {
