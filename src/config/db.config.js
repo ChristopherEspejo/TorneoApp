@@ -1,3 +1,3 @@
 module.exports = {
-    url: "mongodb://127.0.0.1:27017/torneo-app"
+    url: "mongodb+srv://admin:GLDYIDjd6mjPHdyv@nodeapi.j4wzktx.mongodb.net/NodeApi?retryWrites=true&w=majority"
 };
