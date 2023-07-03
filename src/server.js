@@ -8,6 +8,7 @@ const usersRouter = require('./routes/users');
 const teamsRouter = require('./routes/teams');
 const playerSearchesRouter = require('./routes/playerSearches');
 const tournamentsRouter = require('./routes/tournaments');
+const commentsRouter = require('./routes/comment');
 const admin = require('firebase-admin');
 
 // Habilitar CORS
@@ -49,6 +50,7 @@ const port = process.env.PORT || 3000;
 // Añade el middleware 'authenticate' en las rutas que requieran autenticación
 app.use('/api/teams', authenticate, teamsRouter);
 app.use('/api/users', authenticate, usersRouter);
+app.use('/api/comments', authenticate, commentsRouter);
 app.use('/api/teams', authenticate, teamsRouter);
 app.use('/api/playerSearches', authenticate, playerSearchesRouter);
 app.use('/api/tournaments',authenticate, tournamentsRouter);
