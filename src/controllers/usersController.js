@@ -28,7 +28,8 @@ exports.getUserData = async (req, res) => {
         name: user.name,
         age: user.age,
         position: user.position,
-        rating: ratingAverage,
+        // rating: ratingAverage,
+        rating: 1,
         comments: comments
       });
     } catch (err) {
