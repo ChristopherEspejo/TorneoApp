@@ -47,9 +47,37 @@ const TournamentSchema = new mongoose.Schema({
   updated_at: {
     type: Date,
     default: Date.now
+  },
+  date: {
+    type: Date,
+    required: true
+  },
+  time: {
+    type: String,
+    required: true
+  },
+  inscription: {
+    type: Number,
+    required: true
+  },
+  prize: {
+    type: Number,
+    required: true
+  },
+  location: {
+    latitude: {
+      type: Number,
+      required: true
+    },
+    longitude: {
+      type: Number,
+      required: true
+    }
+  },
+  teamCount: {
+    type: Number,
+    required: true
   }
 });
 
 module.exports = mongoose.model('Tournament', TournamentSchema);
-
-  
