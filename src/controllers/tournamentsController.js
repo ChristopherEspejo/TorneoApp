@@ -9,10 +9,10 @@ const { shuffle } = require('./utils');
 
 exports.createTournament = async (req, res) => {
   const { name } = req.body;
-  // const creatorId = req.user.id; // Obtener el ID del usuario autenticado
-    const creatorId = '6486bda502b051b2e5865e0d'
+  const { uid } = req.user; // Obtener el UID del usuario autenticado
+
   try {
-    const creator = await User.findById(creatorId);
+    const creator = await User.findOne({ uid });
     if (!creator) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
@@ -23,7 +23,7 @@ exports.createTournament = async (req, res) => {
 
     const newTournament = new Tournament({
       name,
-      created_by: creatorId
+      created_by: creator._id // Usar el ID del usuario encontrado
     });
 
     const savedTournament = await newTournament.save();
@@ -32,6 +32,7 @@ exports.createTournament = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 exports.addTeamToTournament = async (req, res) => {
   const tournamentId = req.params.id;
