@@ -142,6 +142,11 @@ exports.sendMessage = async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
+    // Comprobar si el remitente y el destinatario son el mismo usuario
+    if (sender._id.toString() === recipientId) {
+      return res.status(400).json({ message: 'No puedes enviarte mensajes a ti mismo' });
+    }
+
     // Buscar al destinatario en la base de datos
     const recipient = await User.findById(recipientId);
     if (!recipient) {
@@ -149,28 +154,40 @@ exports.sendMessage = async (req, res) => {
     }
 
     // Buscar el objeto de chat correspondiente con el destinatario en el arreglo de chats del remitente
-    const senderChat = sender.chats.find(chat => chat.userId.toString() === recipientId);
+    let senderChat = sender.chats.find(chat => chat.userId.toString() === recipientId);
+
+    // Si el objeto de chat no existe, crear uno nuevo
     if (!senderChat) {
-      return res.status(404).json({ message: 'Chat no encontrado' });
+      senderChat = {
+        userId: recipientId,
+        messages: []
+      };
+      sender.chats.push(senderChat);
     }
 
     // Agregar el mensaje al historial de mensajes del remitente
     senderChat.messages.push({
       sender: sender._id,
-      recipient: recipient._id,
+      recipient: recipientId,
       content: message
     });
 
     // Buscar el objeto de chat correspondiente con el remitente en el arreglo de chats del destinatario
-    const recipientChat = recipient.chats.find(chat => chat.userId.toString() === sender._id.toString());
+    let recipientChat = recipient.chats.find(chat => chat.userId.toString() === sender._id.toString());
+
+    // Si el objeto de chat no existe, crear uno nuevo
     if (!recipientChat) {
-      return res.status(404).json({ message: 'Chat no encontrado' });
+      recipientChat = {
+        userId: sender._id,
+        messages: []
+      };
+      recipient.chats.push(recipientChat);
     }
 
     // Agregar el mensaje al historial de mensajes del destinatario
     recipientChat.messages.push({
       sender: sender._id,
-      recipient: recipient._id,
+      recipient: recipientId,
       content: message
     });
 
@@ -186,21 +203,33 @@ exports.sendMessage = async (req, res) => {
 
 
 
-exports.getUserChats = async (req, res) => {
-  const uid = req.user.uid; // UID del usuario autenticado
 
+
+exports.getUserChats = async (req, res) => {
+  console.log("buenas1");
+  const { uid } = req.user; // UID del usuario autenticado
+  console.log("buenas", uid);
   try {
+    console.log("buenas");
     // Buscar al usuario actual en la base de datos por su UID
-    const user = await User.findOne({ uid }).populate('chats.userId');
+    const user = await User.findOne( {uid} ).populate({
+      path: 'chats.userId',
+      select: 'name'
+    });
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // Obtener el arreglo de chats del usuario
-    const chats = user.chats;
+    // Obtener los chats del usuario con la información básica del usuario con el que se chatea
+    const chats = user.chats.map(chat => ({
+      userId: chat.userId._id,
+      name: chat.userId.name,
+      messages: chat.messages
+    }));
 
     res.json(chats);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
