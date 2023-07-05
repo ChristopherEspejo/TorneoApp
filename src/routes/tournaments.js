@@ -26,4 +26,9 @@ router.get('/', tournamentController.getTournaments);
 // Obtener un torneo específico
 router.get('/:id', tournamentController.getTournament);
 
+// Eliminar un torneo
+router.delete('/:id', tournamentController.deleteTournament);
+
+
+
 module.exports = router;

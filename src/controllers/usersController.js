@@ -130,3 +130,77 @@ exports.deleteUser = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+exports.sendMessage = async (req, res) => {
+  const { uid } = req.user; // UID del usuario autenticado
+  const { recipientId, message } = req.body; // ID del destinatario y mensaje
+
+  try {
+    // Buscar al usuario actual en la base de datos utilizando el UID
+    const sender = await User.findOne({ uid });
+    if (!sender) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Buscar al destinatario en la base de datos
+    const recipient = await User.findById(recipientId);
+    if (!recipient) {
+      return res.status(404).json({ message: 'Destinatario no encontrado' });
+    }
+
+    // Buscar el objeto de chat correspondiente con el destinatario en el arreglo de chats del remitente
+    const senderChat = sender.chats.find(chat => chat.userId.toString() === recipientId);
+    if (!senderChat) {
+      return res.status(404).json({ message: 'Chat no encontrado' });
+    }
+
+    // Agregar el mensaje al historial de mensajes del remitente
+    senderChat.messages.push({
+      sender: sender._id,
+      recipient: recipient._id,
+      content: message
+    });
+
+    // Buscar el objeto de chat correspondiente con el remitente en el arreglo de chats del destinatario
+    const recipientChat = recipient.chats.find(chat => chat.userId.toString() === sender._id.toString());
+    if (!recipientChat) {
+      return res.status(404).json({ message: 'Chat no encontrado' });
+    }
+
+    // Agregar el mensaje al historial de mensajes del destinatario
+    recipientChat.messages.push({
+      sender: sender._id,
+      recipient: recipient._id,
+      content: message
+    });
+
+    // Guardar los cambios en los usuarios
+    await sender.save();
+    await recipient.save();
+
+    res.json({ message: 'Mensaje enviado exitosamente' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+
+exports.getUserChats = async (req, res) => {
+  const uid = req.user.uid; // UID del usuario autenticado
+
+  try {
+    // Buscar al usuario actual en la base de datos por su UID
+    const user = await User.findOne({ uid }).populate('chats.userId');
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Obtener el arreglo de chats del usuario
+    const chats = user.chats;
+
+    res.json(chats);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

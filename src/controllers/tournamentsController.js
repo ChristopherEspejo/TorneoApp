@@ -8,7 +8,7 @@ const { shuffle } = require('./utils');
 // ...
 
 exports.createTournament = async (req, res) => {
-  const { name } = req.body;
+  const { name, date, time, inscription, prize, location, teamCount } = req.body;
   const { uid } = req.user; // Obtener el UID del usuario autenticado
 
   try {
@@ -23,6 +23,12 @@ exports.createTournament = async (req, res) => {
 
     const newTournament = new Tournament({
       name,
+      date,
+      time,
+      inscription,
+      prize,
+      location,
+      teamCount,
       created_by: creator._id // Usar el ID del usuario encontrado
     });
 
@@ -32,6 +38,7 @@ exports.createTournament = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 exports.addTeamToTournament = async (req, res) => {
@@ -49,9 +56,10 @@ exports.addTeamToTournament = async (req, res) => {
       return res.status(404).json({ message: 'Equipo no encontrado' });
     }
 
-    /*if (tournament.created_by.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Acceso no autorizado' });
-    }*/
+    if (tournament.teams.length >= tournament.teamCount) {
+      return res.status(400).json({ message: 'Se ha alcanzado el número máximo de equipos permitidos en el torneo' });
+    }
+
 
     tournament.teams.push(teamId);
     const updatedTournament = await tournament.save();
@@ -61,6 +69,7 @@ exports.addTeamToTournament = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 
@@ -248,19 +257,6 @@ exports.generateNextRound = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
-  
-
-
-
-
-
-  
   exports.getTournaments = async (req, res) => {
     try {
       const tournaments = await Tournament.find();
@@ -279,6 +275,38 @@ exports.generateNextRound = async (req, res) => {
         return res.status(404).json({ message: 'Torneo no encontrado' });
       }
       res.json(tournament);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  };
+  
+
+  exports.deleteTournament = async (req, res) => {
+    const tournamentId = req.params.id;
+    const uid = req.user.uid; // Obtener el UID del usuario autenticado
+  
+    try {
+      const tournament = await Tournament.findById(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ message: 'Torneo no encontrado' });
+      }
+  
+      const creator = await User.findOne({ uid });
+      if (!creator) {
+        return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+  
+      if (tournament.created_by.toString() !== creator._id.toString()) {
+        return res.status(403).json({ message: 'Acceso no autorizado' });
+      }
+  
+      // Eliminar los partidos asociados al torneo
+      await Match.deleteMany({ tournament: tournamentId });
+  
+      // Eliminar el torneo
+      await Tournament.findByIdAndDelete(tournamentId);
+  
+      res.json({ message: 'Torneo eliminado exitosamente' });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }

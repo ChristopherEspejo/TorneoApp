@@ -1,6 +1,15 @@
 const mongoose = require('mongoose');
 const Comment = require('./Comment');
 
+const ChatSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // ID del usuario con el que se chatea
+  messages: [{
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // ID del remitente del mensaje
+    recipient: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // ID del receptor del mensaje
+    content: { type: String } // Contenido del mensaje
+  }]
+});
+
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   username: { type: String, required: true, unique: true },
@@ -15,6 +24,6 @@ const UserSchema = new mongoose.Schema({
     longitude: { type: Number, default: -77.042793 },
   },
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
+  chats: [ChatSchema], // Arreglo de objetos de chat
 });
-
 module.exports = mongoose.model('User', UserSchema);

@@ -8,5 +8,8 @@ router.get('/profile/:userId',usersController.getUserData)
 router.get('/:id', usersController.getUser);
 router.put('/:id', usersController.updateUser);
 router.delete('/:id', usersController.deleteUser);
+router.post('/send-message', usersController.sendMessage);
+router.get('/chats', usersController.getUserChats);
+
 
 module.exports = router;
