@@ -95,15 +95,11 @@ exports.startTournament = async (req, res) => {
       return res.status(404).json({ message: 'Torneo no encontrado' });
     }
 
-    // if (tournament.created_by.toString() !== req.user.id) {
-    //   return res.status(403).json({ message: 'Acceso no autorizado' });
-    // }
-
     const teams = tournament.teams;
     const totalTeams = teams.length;
 
-    if (totalTeams < 2) {
-      return res.status(400).json({ message: 'Se necesitan al menos 2 equipos para iniciar el torneo' });
+    if (totalTeams < tournament.teamCount) {
+      return res.status(400).json({ message: 'No se ha alcanzado la cantidad  de equipos para iniciar el torneo' });
     }
 
     // Aleatorizar el orden de los equipos
@@ -138,6 +134,7 @@ exports.startTournament = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 exports.editMatches = async (req, res) => {
   const tournamentId = req.params.id;
