@@ -270,29 +270,35 @@ exports.generateNextRound = async (req, res) => {
   }
 };
 
-  exports.getTournaments = async (req, res) => {
-    try {
-      const tournaments = await Tournament.find();
-      res.json(tournaments);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+exports.getTournaments = async (req, res) => {
+  try {
+    const tournaments = await Tournament.find().populate({
+      path: 'teams.team',
+      select: 'name'
+    });
+    res.json(tournaments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.getTournament = async (req, res) => {
+  const tournamentId = req.params.id;
+
+  try {
+    const tournament = await Tournament.findById(tournamentId).populate({
+      path: 'teams.team',
+      select: 'name'
+    });
+    if (!tournament) {
+      return res.status(404).json({ message: 'Torneo no encontrado' });
     }
-  };
-  
-  exports.getTournament = async (req, res) => {
-    const tournamentId = req.params.id;
-  
-    try {
-      const tournament = await Tournament.findById(tournamentId);
-      if (!tournament) {
-        return res.status(404).json({ message: 'Torneo no encontrado' });
-      }
-      res.json(tournament);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  };
-  
+    res.json(tournament);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 
   exports.deleteTournament = async (req, res) => {
     const tournamentId = req.params.id;
