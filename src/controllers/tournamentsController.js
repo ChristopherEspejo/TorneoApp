@@ -99,7 +99,13 @@ exports.startTournament = async (req, res) => {
     const totalTeams = teams.length;
 
     if (totalTeams < tournament.teamCount) {
-      return res.status(400).json({ message: 'No se ha alcanzado la cantidad  de equipos para iniciar el torneo' });
+      return res.status(400).json({ message: 'No se ha alcanzado la cantidad mínima de equipos para iniciar el torneo' });
+    }
+
+    // Verificar si hay algún equipo con estado "pendiente"
+    const hasPendingTeams = teams.some(team => team.state === 'pendiente');
+    if (hasPendingTeams) {
+      return res.status(400).json({ message: 'No se puede iniciar el torneo debido a que hay equipos con estado pendiente de revisión' });
     }
 
     // Aleatorizar el orden de los equipos
@@ -134,6 +140,7 @@ exports.startTournament = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 exports.editMatches = async (req, res) => {
