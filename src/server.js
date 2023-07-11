@@ -10,11 +10,14 @@ const playerSearchesRouter = require('./routes/playerSearches');
 const tournamentsRouter = require('./routes/tournaments');
 const commentsRouter = require('./routes/comment');
 const admin = require('firebase-admin');
+const bodyParser = require('body-parser');
 
 // Habilitar CORS
 app.use(cors());
+
 // Middleware para analizar el cuerpo de las solicitudes POST
-app.use(express.json());
+app.use(bodyParser.json({ limit: '5mb' }));
+app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }));
 
 // Inicializa la aplicación de administración de Firebase con tu credencial
 const serviceAccount = require('../serviceAccountKey.json');
@@ -26,7 +29,9 @@ admin.initializeApp({
 const authenticate = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (token) {
-    admin.auth().verifyIdToken(token)
+    admin
+      .auth()
+      .verifyIdToken(token)
       .then((decodedToken) => {
         // La firma es válida, puedes acceder a los datos decodificados en 'decodedToken'
         req.user = decodedToken;
@@ -43,7 +48,6 @@ const authenticate = (req, res, next) => {
   }
 };
 
-
 // Escuchando en el puerto
 const port = process.env.PORT || 3000;
 
@@ -51,20 +55,18 @@ const port = process.env.PORT || 3000;
 app.use('/api/teams', authenticate, teamsRouter);
 app.use('/api/users', authenticate, usersRouter);
 app.use('/api/comments', authenticate, commentsRouter);
-app.use('/api/teams', authenticate, teamsRouter);
 app.use('/api/playerSearches', authenticate, playerSearchesRouter);
-app.use('/api/tournaments',authenticate, tournamentsRouter);
-app.use(
-  (err, req, res, _) => {
-    return res.status(err.statusCode || 500).json({
-      status: "error",
-      statusCode: err.statusCode,
-      message: err.message,
-    });
-  }
-);
-app.get("*", (_, res) => {
-  //res.sendFile(path.resolve(__dirname, "public/index.html"));
+app.use('/api/tournaments', authenticate, tournamentsRouter);
+
+app.use((err, req, res, _) => {
+  return res.status(err.statusCode || 500).json({
+    status: 'error',
+    statusCode: err.statusCode,
+    message: err.message,
+  });
+});
+
+app.get('*', (_, res) => {
   res.send('Hello World');
 });
 
@@ -74,11 +76,12 @@ app.use((req, res, next) => {
   next();
 });
 
-mongoose.connect(dbConfig.url, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose
+  .connect(dbConfig.url, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
-    app.listen(port , "0.0.0.0", () => console.log(`Escuchando en el puerto ${port}...`));
+    app.listen(port, '0.0.0.0', () => console.log(`Escuchando en el puerto ${port}...`));
     console.log('Conexión a MongoDB exitosa');
   })
-  .catch(err => {
+  .catch((err) => {
     console.error('No se pudo conectar a MongoDB', err);
   });

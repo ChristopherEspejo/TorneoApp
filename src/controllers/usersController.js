@@ -3,39 +3,39 @@ const Comment = require('../models/Comment');
 const admin = require('firebase-admin');
 
 exports.getUserData = async (req, res) => {
-    try {
-      const userId = req.params.userId;
-  
-      // Obtener los datos del usuario
-      const user = await User.findById(userId, 'name age position');
-  
-      if (!user) {
-        return res.status(404).json({ message: 'Usuario no encontrado' });
-      }
-  
-      // Obtener los comentarios del usuario
-      const comments = await Comment.find({ commenter: userId, rating: { $ne: null } }, 'rating');
-  
-      // Calcular el promedio de los ratings
-      let ratingSum = 0;
-      comments.forEach(comment => {
-        ratingSum += comment.rating;
-      });
-      const ratingAverage = ratingSum / comments.length;
-  
-      // Devolver los datos del usuario
-      res.json({
-        name: user.name,
-        age: user.age,
-        position: user.position,
-        // rating: ratingAverage,
-        rating: 1,
-        comments: comments
-      });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+  try {
+    const userId = req.params.userId;
+
+    // Obtener los datos del usuario y poblar los comentarios
+    const user = await User.findById(userId, 'name age position').populate('comments');
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
-  };
+
+    // Obtener los comentarios del usuario
+    const comments = user.comments;
+
+    // Calcular el promedio de los ratings
+    let ratingSum = 0;
+    comments.forEach(comment => {
+      ratingSum += comment.rating;
+    });
+    const ratingAverage = ratingSum / comments.length;
+
+    // Devolver los datos del usuario
+    res.json({
+      name: user.name,
+      age: user.age,
+      position: user.position,
+      rating: ratingAverage,
+      comments: comments
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 
 exports.createUser = async (req, res) => {
     const { name, username, email, role, age, position, location } = req.body;

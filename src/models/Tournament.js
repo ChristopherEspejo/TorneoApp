@@ -6,8 +6,17 @@ const TournamentSchema = new mongoose.Schema({
     required: true
   },
   teams: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Team'
+    team: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Team'
+    },
+    state: {
+      type: String,
+      default: 'pendiente'
+    },
+    voucher: {
+      type: String
+    }
   }],
   created_by: {
     type: mongoose.Schema.Types.ObjectId,

@@ -4,6 +4,7 @@ const Team = require('../models/Team');
 const Match = require('../models/Match');
 // Importa la función de aleatorización
 const { shuffle } = require('./utils');
+const sharp = require('sharp');
 
 // ...
 
@@ -44,6 +45,7 @@ exports.createTournament = async (req, res) => {
 exports.addTeamToTournament = async (req, res) => {
   const tournamentId = req.params.id;
   const teamId = req.body.teamId;
+  const base64Voucher = req.body.voucher; // Cambiar el nombre del campo a 'voucher'
 
   try {
     const tournament = await Tournament.findById(tournamentId);
@@ -60,8 +62,16 @@ exports.addTeamToTournament = async (req, res) => {
       return res.status(400).json({ message: 'Se ha alcanzado el número máximo de equipos permitidos en el torneo' });
     }
 
+    // Asignar el string base64 directamente al campo 'voucher'
+    team.voucher = base64Voucher; // Cambiar el nombre de la variable a 'base64Voucher'
 
-    tournament.teams.push(teamId);
+    const teamData = {
+      team: teamId,
+      state: 'pendiente',
+      voucher: base64Voucher
+    };
+
+    tournament.teams.push(teamData);
     const updatedTournament = await tournament.save();
 
     res.json(updatedTournament);
@@ -69,6 +79,9 @@ exports.addTeamToTournament = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+
 
 
 
