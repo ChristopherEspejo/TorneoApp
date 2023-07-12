@@ -95,17 +95,15 @@ exports.startTournament = async (req, res) => {
       return res.status(404).json({ message: 'Torneo no encontrado' });
     }
 
+    // if (tournament.created_by.toString() !== req.user.id) {
+    //   return res.status(403).json({ message: 'Acceso no autorizado' });
+    // }
+
     const teams = tournament.teams;
     const totalTeams = teams.length;
 
-    if (totalTeams < tournament.teamCount) {
-      return res.status(400).json({ message: 'No se ha alcanzado la cantidad mínima de equipos para iniciar el torneo' });
-    }
-
-    // Verificar si hay algún equipo con estado "pendiente"
-    const hasPendingTeams = teams.some(team => team.state === 'pendiente');
-    if (hasPendingTeams) {
-      return res.status(400).json({ message: 'No se puede iniciar el torneo debido a que hay equipos con estado pendiente de revisión' });
+    if (totalTeams < 2) {
+      return res.status(400).json({ message: 'Se necesitan al menos 2 equipos para iniciar el torneo' });
     }
 
     // Aleatorizar el orden de los equipos
@@ -140,6 +138,8 @@ exports.startTournament = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
 
 
 
@@ -276,32 +276,106 @@ exports.generateNextRound = async (req, res) => {
 
 exports.getTournaments = async (req, res) => {
   try {
-    const tournaments = await Tournament.find().populate({
-      path: 'teams.team',
-      select: 'name'
+    const tournaments = await Tournament.find()
+      .populate({
+        path: 'teams.team',
+        select: 'name'
+      })
+      .populate({
+        path: 'matches',
+        select: 'round result team1 team2'
+      });
+
+    const transformedTournaments = tournaments.map(tournament => {
+      const transformedMatches = tournament.matches.map(match => {
+        const team1 = match.team1 ? {
+          _id: match.team1 ? match.team1._id : null,
+          name: findTeamName(tournament.teams, match.team1)
+        } : null;
+        const team2 = match.team2 ? {
+          _id: match.team2 ? match.team2._id : null,
+          name: findTeamName(tournament.teams, match.team2)
+        } : null;
+
+        return {
+          _id: match._id,
+          round: match.round,
+          result: match.result,
+          team1,
+          team2
+        };
+      });
+
+      return {
+        ...tournament._doc,
+        matches: transformedMatches
+      };
     });
-    res.json(tournaments);
+
+    res.json(transformedTournaments);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
+// Función auxiliar para encontrar el nombre del equipo en el arreglo de teams
+const findTeamName = (teams, matchTeam) => {
+  if (!matchTeam || !matchTeam._id) {
+    return null;
+  }
+
+  const team = teams.find(team => team._id.toString() === matchTeam._id.toString());
+  return team ? team.team.name : null;
+};
+
+
+
+
+
+
+
+
+
+
 
 exports.getTournament = async (req, res) => {
   const tournamentId = req.params.id;
 
   try {
-    const tournament = await Tournament.findById(tournamentId).populate({
-      path: 'teams.team',
-      select: 'name'
-    });
+    const tournament = await Tournament.findById(tournamentId)
+      .populate({
+        path: 'teams.team',
+        select: 'name'
+      })
+      .populate({
+        path: 'matches',
+        select: 'round team1 team2 result',
+        populate: {
+          path: 'team1',
+          select: 'name'
+        }
+      })
+      .populate({
+        path: 'matches',
+        select: 'round team1 team2 result',
+        populate: {
+          path: 'team2',
+          select: 'name'
+        }
+      });
+
     if (!tournament) {
       return res.status(404).json({ message: 'Torneo no encontrado' });
     }
+
     res.json(tournament);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+
 
 
   exports.deleteTournament = async (req, res) => {
