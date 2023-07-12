@@ -1,32 +1,46 @@
 const Team = require('../models/Team');
 const User = require('../models/User');
 
-// Crear un nuevo equipo
+
+
 exports.createTeam = async (req, res) => {
-    // Crear el nuevo equipo
-    const newTeam = new Team({
-        name: req.body.name,
-        creator: req.body.creator,
-        members: req.body.members
-    });
+  // Crear el nuevo equipo
+  const newTeam = new Team({
+    name: req.body.name,
+    members: req.body.members
+  });
 
-    try {
-        // Guardar el equipo en la base de datos
-        const savedTeam = await newTeam.save();
+  try {
+    // Obtener el UID del usuario desde el token
+    const uid = req.user.uid;
 
-        // Añadir el id del equipo al campo 'team' de cada miembro
-        for (const memberId of newTeam.members) {
-            const user = await User.findById(memberId);
-            user.team = newTeam._id;
-            await user.save();
-        }
+    // Buscar al usuario por su UID para obtener su ID de MongoDB
+    const user = await User.findOne({ uid });
 
-        // Enviar la respuesta
-        res.json(savedTeam);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
+
+    // Asignar el ID de MongoDB del usuario como creador del equipo
+    newTeam.creator = user._id;
+
+    // Guardar el equipo en la base de datos
+    const savedTeam = await newTeam.save();
+
+    // Añadir el id del equipo al campo 'team' de cada miembro
+    for (const memberId of newTeam.members) {
+      const user = await User.findById(memberId);
+      user.team = newTeam._id;
+      await user.save();
+    }
+
+    // Enviar la respuesta
+    res.json(savedTeam);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
+
 
 // Actualizar un equipo
 exports.updateTeam = async (req, res) => {
