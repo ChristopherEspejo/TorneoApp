@@ -72,17 +72,29 @@ exports.createUser = async (req, res) => {
 
 
 
-exports.getUser = async (req, res) => {
+  exports.getUser = async (req, res) => {
     try {
-        const user = await User.findOne({ uid: req.params.id });
-        if (!user) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
-        }
-        res.json(user);
+      const { id } = req.params;
+      
+      let user;
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        // Si el ID es válido, buscar por ID
+        user = await User.findById(id);
+      } else {
+        // Si el ID no es válido, buscar por UID
+        user = await User.findOne({ uid: id });
+      }
+  
+      if (!user) {
+        return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+  
+      res.json(user);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+      res.status(500).json({ message: err.message });
     }
-};
+  };
+  
 
 exports.getUsers = async (req, res) => {
     try {
