@@ -343,7 +343,8 @@ exports.getTournament = async (req, res) => {
       .populate({
         path: 'matches',
         select: 'round result team1 team2',
-      });
+      })
+      ;
 
     if (!tournament) {
       return res.status(404).json({ message: 'Torneo no encontrado' });
@@ -368,9 +369,19 @@ exports.getTournament = async (req, res) => {
       };
     });
 
+    const transformedWinners = tournament.winners.map(winner => {
+      const team = tournament.teams.find(team => team._id.toString() === winner.teamId.toString());
+      return {
+        matchId: winner.matchId,
+        teamId: winner.teamId,
+        teamName: team ? team.team.name : null
+      };
+    });
+
     const transformedTournament = {
       ...tournament._doc,
-      matches: transformedMatches
+      matches: transformedMatches,
+      winners: transformedWinners
     };
 
     res.json(transformedTournament);
@@ -378,6 +389,7 @@ exports.getTournament = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 
