@@ -331,13 +331,6 @@ const findTeamName = (teams, matchTeam) => {
 
 
 
-
-
-
-
-
-
-
 exports.getTournament = async (req, res) => {
   const tournamentId = req.params.id;
 
@@ -349,26 +342,38 @@ exports.getTournament = async (req, res) => {
       })
       .populate({
         path: 'matches',
-        select: 'round team1 team2 result',
-        populate: {
-          path: 'team1',
-          select: 'name'
-        }
-      })
-      .populate({
-        path: 'matches',
-        select: 'round team1 team2 result',
-        populate: {
-          path: 'team2',
-          select: 'name'
-        }
+        select: 'round result team1 team2',
       });
 
     if (!tournament) {
       return res.status(404).json({ message: 'Torneo no encontrado' });
     }
 
-    res.json(tournament);
+    const transformedMatches = tournament.matches.map(match => {
+      const team1 = match.team1 ? {
+        _id: match.team1 ? match.team1._id : null,
+        name: findTeamName(tournament.teams, match.team1)
+      } : null;
+      const team2 = match.team2 ? {
+        _id: match.team2 ? match.team2._id : null,
+        name: findTeamName(tournament.teams, match.team2)
+      } : null;
+
+      return {
+        _id: match._id,
+        round: match.round,
+        result: match.result,
+        team1,
+        team2
+      };
+    });
+
+    const transformedTournament = {
+      ...tournament._doc,
+      matches: transformedMatches
+    };
+
+    res.json(transformedTournament);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
