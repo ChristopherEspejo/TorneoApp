@@ -276,39 +276,15 @@ exports.generateNextRound = async (req, res) => {
 
 exports.getTournaments = async (req, res) => {
   try {
-    const tournaments = await Tournament.find()
-      .populate({
-        path: 'teams.team',
-        select: 'name'
-      })
-      .populate({
-        path: 'matches',
-        select: 'round result team1 team2'
-      });
+    const tournaments = await Tournament.find();
 
     const transformedTournaments = tournaments.map(tournament => {
-      const transformedMatches = tournament.matches.map(match => {
-        const team1 = match.team1 ? {
-          _id: match.team1 ? match.team1._id : null,
-          name: findTeamName(tournament.teams, match.team1)
-        } : null;
-        const team2 = match.team2 ? {
-          _id: match.team2 ? match.team2._id : null,
-          name: findTeamName(tournament.teams, match.team2)
-        } : null;
-
-        return {
-          _id: match._id,
-          round: match.round,
-          result: match.result,
-          team1,
-          team2
-        };
-      });
-
       return {
         ...tournament._doc,
-        matches: transformedMatches
+        matches: [],
+        roundMatches: [],
+        winners: [],
+        teams: [] // Agregar también el campo 'teams' vacío si es necesario
       };
     });
 
@@ -317,6 +293,8 @@ exports.getTournaments = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
 
 // Función auxiliar para encontrar el nombre del equipo en el arreglo de teams
 const findTeamName = (teams, matchTeam) => {
