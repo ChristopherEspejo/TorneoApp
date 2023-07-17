@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Comment = require('../models/Comment');
 const admin = require('firebase-admin');
+const mongoose = require('mongoose');
 
 exports.getUserData = async (req, res) => {
   try {
