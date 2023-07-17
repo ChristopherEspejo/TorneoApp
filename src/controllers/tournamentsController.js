@@ -403,5 +403,58 @@ exports.getTournament = async (req, res) => {
       res.status(500).json({ message: err.message });
     }
   };
+
+  exports.acceptTeam = async (req, res) => {
+    const tournamentId = req.params.id;
+    const teamId = req.body.teamId;
+  
+    try {
+      const tournament = await Tournament.findById(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ message: 'Torneo no encontrado' });
+      }
+  
+      const team = tournament.teams.find(t => t._id.toString() === teamId);
+      if (!team) {
+        return res.status(404).json({ message: 'Equipo no encontrado en el torneo' });
+      }
+  
+      if (team.state !== 'pendiente') {
+        return res.status(400).json({ message: 'El equipo ya ha sido aceptado o rechazado' });
+      }
+  
+      team.state = 'aceptado';
+      await tournament.save();
+  
+      res.json({ message: 'Equipo aceptado exitosamente' });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  };
+  
+  exports.rejectTeam = async (req, res) => {
+    const tournamentId = req.params.id;
+    const teamId = req.body.teamId;
+  
+    try {
+      const tournament = await Tournament.findById(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ message: 'Torneo no encontrado' });
+      }
+  
+      const teamIndex = tournament.teams.findIndex(t => t._id.toString() === teamId);
+      if (teamIndex === -1) {
+        return res.status(404).json({ message: 'Equipo no encontrado en el torneo' });
+      }
+  
+      tournament.teams.splice(teamIndex, 1);
+      await tournament.save();
+  
+      res.json({ message: 'Equipo rechazado exitosamente' });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  };
+  
   
  

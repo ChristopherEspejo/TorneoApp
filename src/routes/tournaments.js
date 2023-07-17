@@ -8,6 +8,12 @@ router.post('/', tournamentController.createTournament);
 // Agregar un equipo a un torneo
 router.post('/:id/add-team', tournamentController.addTeamToTournament);
 
+// Aceptar un equipo en un torneo
+router.put('/:id/accept-team', tournamentController.acceptTeam);
+
+// Rechazar un equipo en un torneo
+router.put('/:id/reject-team', tournamentController.rejectTeam);
+
 // Iniciar un torneo
 router.post('/:id/start', tournamentController.startTournament);
 
@@ -28,7 +34,5 @@ router.get('/:id', tournamentController.getTournament);
 
 // Eliminar un torneo
 router.delete('/:id', tournamentController.deleteTournament);
-
-
 
 module.exports = router;
