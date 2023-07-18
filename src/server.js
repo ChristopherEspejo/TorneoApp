@@ -21,7 +21,6 @@ app.use(bodyParser.json({ limit: '5mb' }));
 app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }));
 
 // Inicializa la aplicación de administración de Firebase con tu credencial
-console.log(environments.SERVICE_ACCOUNT_KEY)
 const serviceAccount = environments.SERVICE_ACCOUNT_KEY;
 //const serviceAccount = require('../serviceAccountKey.json');
 admin.initializeApp({
