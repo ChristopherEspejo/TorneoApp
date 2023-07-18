@@ -11,6 +11,7 @@ const tournamentsRouter = require('./routes/tournaments');
 const commentsRouter = require('./routes/comment');
 const admin = require('firebase-admin');
 const bodyParser = require('body-parser');
+const environments = require('./config/environments');
 
 // Habilitar CORS
 app.use(cors());
@@ -20,7 +21,9 @@ app.use(bodyParser.json({ limit: '5mb' }));
 app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }));
 
 // Inicializa la aplicación de administración de Firebase con tu credencial
-const serviceAccount = require('../serviceAccountKey.json');
+console.log(environments.SERVICE_ACCOUNT_KEY)
+const serviceAccount = environments.SERVICE_ACCOUNT_KEY;
+//const serviceAccount = require('../serviceAccountKey.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
