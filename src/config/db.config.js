@@ -1,3 +1,5 @@
+const { DB_CONNECTION } = require("./environments");
+
 module.exports = {
-    url: "mongodb+srv://admin:GLDYIDjd6mjPHdyv@nodeapi.j4wzktx.mongodb.net/NodeApi?retryWrites=true&w=majority"
+    url: DB_CONNECTION,
 };
