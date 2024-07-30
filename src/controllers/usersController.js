@@ -100,6 +100,44 @@ exports.register = async (req, res) => {
   }
 };
 
+exports.updateUser = async (req, res) => {
+  try {
+    const uid = req.user.uid; // Usas el UID obtenido por tu middleware de autenticación
+    const { nombre, apellido, dni, email } = req.body;
+
+    // Crea un objeto con los campos que pueden ser actualizados
+    const updateData = {};
+    if (nombre) updateData.nombre = nombre;
+    if (apellido) updateData.apellido = apellido;
+    if (dni) updateData.dni = dni;
+    if (email) updateData.email = email;
+
+    // Actualiza el usuario
+    const updatedUser = await User.findByIdAndUpdate(uid, updateData, { new: true });
+
+    if (updatedUser) {
+      // Usuario actualizado
+      return res.json({
+        message: 'Usuario actualizado exitosamente',
+        user: {
+          nombre: updatedUser.nombre,
+          apellido: updatedUser.apellido,
+          dni: updatedUser.dni,
+          email: updatedUser.email,
+          rol: updatedUser.rol
+        }
+      });
+    } else {
+      // Usuario no encontrado
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('Error en el servidor');
+  }
+};
+
+
 
 
 

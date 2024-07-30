@@ -210,11 +210,6 @@ exports.completeTransaction = async (req, res) => {
   }
 };
 
-
-
-
-
-
 // Asegúrate de implementar esta función según tu lógica de negocio para calcular la cantidad de recepción
 function calcularCantidadRecepcion(cantidadEnvio, tipoCambio,tipoOperacion) {
   // Esta es una implementación de ejemplo. Debes ajustarla según tu caso de uso específico.
