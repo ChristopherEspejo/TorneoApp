@@ -7,6 +7,7 @@ const dbConfig = require('./config/db.config');
 const usersRouter = require('./routes/users');
 const changeTypeRouter = require('./routes/changeType');
 const transactionsRouter = require('./routes/transactions');
+const bankRoutes = require('./routes/banks');
 const bodyParser = require('body-parser');
 const authenticate = require('./middlewares/auth');
 
@@ -21,6 +22,7 @@ app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }));
 app.use('/api/users', authenticate, usersRouter);
 app.use('/api/changetype', changeTypeRouter);
 app.use('/api/transactions', authenticate, transactionsRouter);
+app.use('/api/banks', authenticate, bankRoutes);
 
 // Manejo de errores
 app.use((err, req, res, _) => {
