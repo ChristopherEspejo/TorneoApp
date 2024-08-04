@@ -20,6 +20,7 @@ router.get('/', transactionsController.getAllTransactions);
 // Actualizar el estado de una transacción a 'culminado'
 router.patch('/:id/complete', transactionsController.completeTransaction);
 
+router.get('/download-report', transactionsController.downloadTransactionsReport);
 
 
 module.exports = router;
