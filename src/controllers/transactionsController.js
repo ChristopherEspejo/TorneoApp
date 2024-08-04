@@ -15,6 +15,7 @@ const shortid = require('shortid');
 exports.downloadTransactionsReport = async (req, res) => {
   const uid = req.user.uid;
   const user = await User.findById(uid);
+
   if (!user || user.rol !== 'admin') {
       return res.status(403).send('Acceso denegado. Sólo los administradores pueden realizar esta acción.');
   }
@@ -25,35 +26,31 @@ exports.downloadTransactionsReport = async (req, res) => {
 
   const transactions = await Transaction.find(query);
   if (transactions.length === 0) {
-      return res.status(404).send(`No transactions completed in the selected period (${dateRange}).`);
+      return res.status(404).send('No transactions completed in this period');
   }
 
-  // Crear el documento PDF y enviarlo al cliente
   const doc = new PDFDocument();
+  const pdfTable = new PDFTable(doc, { padding: 5 });
+
   res.setHeader('Content-disposition', 'attachment; filename="transactions-report.pdf"');
   res.setHeader('Content-type', 'application/pdf');
   doc.pipe(res);
 
   const table = {
       headers: ['Transaction ID', 'Operation', 'Sent', 'Received', 'Bank'],
-      rows: transactions.map(tx => [
-          tx.idTransaction,
-          tx.tipoOperacion.replace('tipo', ''),
-          tx.cantidadEnvio.toString(),
-          tx.cantidadRecepcion.toString(),
-          tx.bancoDestino
-      ])
+      rows: transactions.map(t => [
+          t.idTransaction,
+          t.tipoOperacion.replace('tipo', ''),
+          t.cantidadEnvio.toString(),
+          t.cantidadRecepcion.toString(),
+          t.bancoDestino
+      ]),
   };
 
-  const pdfTable = new PDFTable(doc, { bottomMargin: 30 });
-  pdfTable.addTable(table, {
-      prepareHeader: () => doc.font('Helvetica-Bold').fontSize(12),
-      prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
-          doc.font('Helvetica').fontSize(10);
-      },
-  });
+  // Añadir la tabla al documento usando pdfkit-table
+  await pdfTable.addTable(table);
 
-  doc.end(); // Finalizar el documento
+  doc.end();
 };
 
 function adjustDateRangeQuery(query, dateRange) {
@@ -63,8 +60,7 @@ function adjustDateRangeQuery(query, dateRange) {
   } else if (dateRange === 'week') {
       let start = now.getDate() - now.getDay();
       let end = start + 6; // Last day of the week
-      now.setDate(start);
-      query.createdAt = { $gte: new Date(now), $lte: new Date(now.setDate(end)) };
+      query.createdAt = { $gte: new Date(now.setDate(start)), $lte: new Date(now.setDate(end)) };
   }
 }
 
