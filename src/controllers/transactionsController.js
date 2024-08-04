@@ -4,9 +4,7 @@ const User = require('../models/User');
 const {Resend} = require('resend');
 const environments = require('../config/environments');
 const resend = new Resend(environments.APIKEY_RESEND);
-const PDFDocument = require('pdfkit');
-const fs = require('fs');
-const PDFTable = require('pdfkit-table');
+const PDFDocument = require('pdfkit-table');
 const shortid = require('shortid');
 
 
@@ -17,7 +15,7 @@ exports.downloadTransactionsReport = async (req, res) => {
   const user = await User.findById(uid);
 
   if (!user || user.rol !== 'admin') {
-      return res.status(403).send('Acceso denegado. Sólo los administradores pueden realizar esta acción.');
+    return res.status(403).send('Acceso denegado. Sólo los administradores pueden realizar esta acción.');
   }
 
   const { dateRange } = req.query;
@@ -26,29 +24,40 @@ exports.downloadTransactionsReport = async (req, res) => {
 
   const transactions = await Transaction.find(query);
   if (transactions.length === 0) {
-      return res.status(404).send('No transactions completed in this period');
+    return res.status(404).send('No transactions completed in this period');
   }
 
-  const doc = new PDFDocument();
-  const pdfTable = new PDFTable(doc, { padding: 5 });
-
+  const doc = new PDFDocument({ margin: 30, size: 'A4' });
   res.setHeader('Content-disposition', 'attachment; filename="transactions-report.pdf"');
   res.setHeader('Content-type', 'application/pdf');
   doc.pipe(res);
 
   const table = {
-      headers: ['Transaction ID', 'Operation', 'Sent', 'Received', 'Bank'],
-      rows: transactions.map(t => [
-          t.idTransaction,
-          t.tipoOperacion.replace('tipo', ''),
-          t.cantidadEnvio.toString(),
-          t.cantidadRecepcion.toString(),
-          t.bancoDestino
-      ]),
+    title: "Transaction Report",
+    subtitle: "Generated Report",
+    headers: [
+      { label: "Transaction ID", property: 'idTransaction', width: 100 },
+      { label: "Operation", property: 'tipoOperacion', width: 100, renderer: (val) => val.replace('tipo', '') },
+      { label: "Sent", property: 'cantidadEnvio', width: 100 },
+      { label: "Received", property: 'cantidadRecepcion', width: 100 },
+      { label: "Bank", property: 'bancoDestino', width: 100 }
+    ],
+    datas: transactions.map(tx => ({
+      idTransaction: tx.idTransaction,
+      tipoOperacion: tx.tipoOperacion,
+      cantidadEnvio: tx.cantidadEnvio.toString(),
+      cantidadRecepcion: tx.cantidadRecepcion.toString(),
+      bancoDestino: tx.bancoDestino
+    }))
   };
 
-  // Añadir la tabla al documento usando pdfkit-table
-  await pdfTable.addTable(table);
+  // Añadir la tabla al documento
+  await doc.table(table, {
+    prepareHeader: () => doc.font("Helvetica-Bold").fontSize(10),
+    prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
+      doc.font("Helvetica").fontSize(10);
+    },
+  });
 
   doc.end();
 };
@@ -56,11 +65,11 @@ exports.downloadTransactionsReport = async (req, res) => {
 function adjustDateRangeQuery(query, dateRange) {
   const now = new Date();
   if (dateRange === 'today') {
-      query.createdAt = { $gte: new Date(now.setHours(0, 0, 0, 0)), $lte: new Date(now.setHours(23, 59, 59, 999)) };
+    query.createdAt = { $gte: new Date(now.setHours(0, 0, 0, 0)), $lte: new Date(now.setHours(23, 59, 59, 999)) };
   } else if (dateRange === 'week') {
-      let start = now.getDate() - now.getDay();
-      let end = start + 6; // Last day of the week
-      query.createdAt = { $gte: new Date(now.setDate(start)), $lte: new Date(now.setDate(end)) };
+    let start = now.getDate() - now.getDay();
+    let end = start + 6;
+    query.createdAt = { $gte: new Date(now.setDate(start)), $lte: new Date(now.setDate(end)) };
   }
 }
 
