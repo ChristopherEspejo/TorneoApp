@@ -6,6 +6,7 @@ const environments = require('../config/environments');
 const resend = new Resend(environments.APIKEY_RESEND);
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+const PDFTable = require('pdfkit-table');
 const shortid = require('shortid');
 
 
@@ -15,7 +16,7 @@ exports.downloadTransactionsReport = async (req, res) => {
   const uid = req.user.uid;
   const user = await User.findById(uid);
   if (!user || user.rol !== 'admin') {
-    return res.status(403).send('Acceso denegado. Sólo los administradores pueden realizar esta acción.');
+      return res.status(403).send('Acceso denegado. Sólo los administradores pueden realizar esta acción.');
   }
 
   const { dateRange } = req.query;
@@ -24,7 +25,7 @@ exports.downloadTransactionsReport = async (req, res) => {
 
   const transactions = await Transaction.find(query);
   if (transactions.length === 0) {
-    return res.status(404).send('No transactions completed in this period');
+      return res.status(404).send('No transactions completed in this period');
   }
 
   // Crear el documento PDF y enviarlo al cliente
@@ -33,10 +34,24 @@ exports.downloadTransactionsReport = async (req, res) => {
   res.setHeader('Content-type', 'application/pdf');
   doc.pipe(res);
 
-  doc.fontSize(16).text('Transactions Report', { align: 'center' }).moveDown();
-  doc.fontSize(12).text('ID', 70).text('Operation', 150).text('Sent', 280).text('Received', 410).text('Bank', 540).moveDown(0.5);
-  transactions.forEach(t => {
-    doc.text(t.idTransaction, 70).text(t.tipoOperacion.replace('tipo', ''), 150).text(`${t.cantidadEnvio}`, 280).text(`${t.cantidadRecepcion}`, 410).text(t.bancoDestino, 540).moveDown(0.5);
+  const table = {
+      headers: ['Transaction ID', 'Operation', 'Sent', 'Received', 'Bank'],
+      rows: transactions.map(tx => [
+          tx.idTransaction,
+          tx.tipoOperacion.replace('tipo', ''),
+          tx.cantidadEnvio.toString(),
+          tx.cantidadRecepcion.toString(),
+          tx.bancoDestino
+      ])
+  };
+
+  // Usar pdfkit-table para agregar la tabla al documento
+  const pdfTable = new PDFTable(doc, { bottomMargin: 30 });
+  pdfTable.addTable(table, {
+      prepareHeader: () => doc.font('Helvetica-Bold').fontSize(12),
+      prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
+          doc.font('Helvetica').fontSize(10);
+      },
   });
 
   doc.end();
@@ -45,11 +60,11 @@ exports.downloadTransactionsReport = async (req, res) => {
 function adjustDateRangeQuery(query, dateRange) {
   const now = new Date();
   if (dateRange === 'today') {
-    query.createdAt = { $gte: new Date(now.setHours(0, 0, 0, 0)), $lte: new Date(now.setHours(23, 59, 59, 999)) };
+      query.createdAt = { $gte: new Date(now.setHours(0, 0, 0, 0)), $lte: new Date(now.setHours(23, 59, 59, 999)) };
   } else if (dateRange === 'week') {
-    let start = now.getDate() - now.getDay();
-    let end = start + 6; // Last day of the week
-    query.createdAt = { $gte: new Date(now.setDate(start)), $lte: new Date(now.setDate(end)) };
+      let start = now.getDate() - now.getDay();
+      let end = start + 6; // Last day of the week
+      query.createdAt = { $gte: new Date(now.setDate(start)), $lte: new Date(now.setDate(end)) };
   }
 }
 
