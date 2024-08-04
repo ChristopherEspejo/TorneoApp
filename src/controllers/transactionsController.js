@@ -15,7 +15,7 @@ exports.downloadTransactionsReport = async (req, res) => {
   const user = await User.findById(uid);
 
   if (!user || user.rol !== 'admin') {
-    return res.status(403).send('Acceso denegado. Sólo los administradores pueden realizar esta acción.');
+    return res.status(403).send('Acceso denegado. Sólo administradores pueden realizar esta acción.');
   }
 
   const { dateRange } = req.query;
@@ -26,7 +26,7 @@ exports.downloadTransactionsReport = async (req, res) => {
     .populate('usuarioId', 'nombre apellido dni email');
 
   if (transactions.length === 0) {
-    return res.status(404).send('No se completaron transacciones en este período');
+    return res.status(404).send('No se encontraron transacciones completadas en este período.');
   }
 
   const doc = new PDFDocument({ margin: 30, size: 'A4' });
@@ -38,15 +38,15 @@ exports.downloadTransactionsReport = async (req, res) => {
     title: "Informe de Transacciones",
     subtitle: "Informe Generado",
     headers: [
-      { label: "ID de Transacción", property: 'idTransaction', width: 100 },
-      { label: "Operación", property: 'tipoOperacion', width: 100, renderer: (val) => val.replace('tipo', '') },
-      { label: "Enviado", property: 'cantidadEnvio', width: 100 },
-      { label: "Recibido", property: 'cantidadRecepcion', width: 100 },
-      { label: "Banco", property: 'bancoDestino', width: 100 },
-      { label: "Nombre", property: 'usuarioId.nombre', width: 100 },
-      { label: "Apellido", property: 'usuarioId.apellido', width: 100 },
-      { label: "DNI", property: 'usuarioId.dni', width: 100 },
-      { label: "Correo", property: 'usuarioId.email', width: 150 }
+      { label: "ID de Transacción", property: 'idTransaction', width: 50 },
+      { label: "Operación", property: 'tipoOperacion', width: 50, renderer: val => val.replace('tipo', '') },
+      { label: "Enviado", property: 'cantidadEnvio', width: 50 },
+      { label: "Recibido", property: 'cantidadRecepcion', width: 50 },
+      { label: "Banco", property: 'bancoDestino', width: 50 },
+      { label: "Nombre", property: 'usuarioId.nombre', width: 50 },
+      { label: "Apellido", property: 'usuarioId.apellido', width: 50 },
+      { label: "DNI", property: 'usuarioId.dni', width: 50 },
+      { label: "Correo", property: 'usuarioId.email', width: 50 }
     ],
     datas: transactions.map(tx => ({
       idTransaction: tx.idTransaction,
@@ -54,15 +54,14 @@ exports.downloadTransactionsReport = async (req, res) => {
       cantidadEnvio: tx.cantidadEnvio.toString(),
       cantidadRecepcion: tx.cantidadRecepcion.toString(),
       bancoDestino: tx.bancoDestino,
-      usuarioId: tx.usuarioId // Asegúrate que esta propiedad mapee correctamente
+      usuarioId: tx.usuarioId // Asegurarse que esta propiedad mapee correctamente
     }))
   };
 
-  // Añadir la tabla al documento
   await doc.table(table, {
-    prepareHeader: () => doc.font("Helvetica-Bold").fontSize(10),
+    prepareHeader: () => doc.font("Helvetica-Bold").fontSize(8),
     prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
-      doc.font("Helvetica").fontSize(10);
+      doc.font("Helvetica").fontSize(8);
     },
   });
 
@@ -82,7 +81,6 @@ function adjustDateRangeQuery(query, dateRange) {
     query.createdAt = { $gte: startOfWeek, $lte: endOfWeek };
   }
 }
-
 
 
 
