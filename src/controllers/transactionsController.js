@@ -25,7 +25,7 @@ exports.downloadTransactionsReport = async (req, res) => {
 
   const transactions = await Transaction.find(query);
   if (transactions.length === 0) {
-      return res.status(404).send('No transactions completed in this period');
+      return res.status(404).send(`No transactions completed in the selected period (${dateRange}).`);
   }
 
   // Crear el documento PDF y enviarlo al cliente
@@ -45,7 +45,6 @@ exports.downloadTransactionsReport = async (req, res) => {
       ])
   };
 
-  // Usar pdfkit-table para agregar la tabla al documento
   const pdfTable = new PDFTable(doc, { bottomMargin: 30 });
   pdfTable.addTable(table, {
       prepareHeader: () => doc.font('Helvetica-Bold').fontSize(12),
@@ -54,7 +53,7 @@ exports.downloadTransactionsReport = async (req, res) => {
       },
   });
 
-  doc.end();
+  doc.end(); // Finalizar el documento
 };
 
 function adjustDateRangeQuery(query, dateRange) {
@@ -64,7 +63,8 @@ function adjustDateRangeQuery(query, dateRange) {
   } else if (dateRange === 'week') {
       let start = now.getDate() - now.getDay();
       let end = start + 6; // Last day of the week
-      query.createdAt = { $gte: new Date(now.setDate(start)), $lte: new Date(now.setDate(end)) };
+      now.setDate(start);
+      query.createdAt = { $gte: new Date(now), $lte: new Date(now.setDate(end)) };
   }
 }
 
