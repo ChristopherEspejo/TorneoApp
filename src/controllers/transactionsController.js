@@ -190,7 +190,7 @@ exports.completeTransaction = async (req, res) => {
     // Intentar enviar el correo electrónico
     // Intentar enviar el correo electrónico
     const { data, error } = await resend.emails.send({
-      from: 'Fastchange <noreply@meditaloya.com>',  // Usar una dirección bajo tu dominio verificado
+      from: 'Cambialo <carlos.amorin@cambialo.com.pe>',  // Usar una dirección bajo tu dominio verificado
       to: [user.email],  // Ahora puedes enviar a cualquier correo
       subject: 'Confirmación de Transacción',
       html: htmlContent
