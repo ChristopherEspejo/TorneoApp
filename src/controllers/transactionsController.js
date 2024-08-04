@@ -118,13 +118,16 @@ exports.getAllTransactions = async (req, res) => {
       query = { usuarioId: uid };
     }
 
-    const transactions = await Transaction.find(query);
+    const transactions = await Transaction.find(query)
+      .populate('usuarioId', 'nombre apellido dni'); // Población de datos del usuario
+
     res.json(transactions);
   } catch (error) {
     console.error(error);
     res.status(500).send('Error al obtener las transacciones');
   }
 };
+
 
 exports.completeTransaction = async (req, res) => {
   try {
@@ -185,12 +188,14 @@ exports.completeTransaction = async (req, res) => {
     `;  // Tu HTML aquí
 
     // Intentar enviar el correo electrónico
+    // Intentar enviar el correo electrónico
     const { data, error } = await resend.emails.send({
-      from: 'Fastchange <FastChange@resend.dev>',
-      to: ['criskevin20@gmail.com'],
+      from: 'Fastchange <noreply@meditaloya.com>',  // Usar una dirección bajo tu dominio verificado
+      to: [user.email],  // Ahora puedes enviar a cualquier correo
       subject: 'Confirmación de Transacción',
       html: htmlContent
     });
+
 
     if (error) {
       console.error(error);
