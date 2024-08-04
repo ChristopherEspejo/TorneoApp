@@ -13,6 +13,7 @@ const shortid = require('shortid');
 exports.downloadTransactionsReport = async (req, res) => {
   const uid = req.user.uid;
   const user = await User.findById(uid);
+
   if (!user || user.rol !== 'admin') {
     return res.status(403).send('Acceso denegado. Sólo los administradores pueden realizar esta acción.');
   }
@@ -21,32 +22,39 @@ exports.downloadTransactionsReport = async (req, res) => {
   let query = { estado: 'culminado' };
   adjustDateRangeQuery(query, dateRange);
 
-  const transactions = await Transaction.find(query);
+  const transactions = await Transaction.find(query)
+    .populate('usuarioId', 'nombre apellido dni email');
+
   if (transactions.length === 0) {
-    return res.status(404).send('No transactions completed in this period');
+    return res.status(404).send('No se completaron transacciones en este período');
   }
 
   const doc = new PDFDocument({ margin: 30, size: 'A4' });
-  res.setHeader('Content-disposition', 'attachment; filename="transactions-report.pdf"');
+  res.setHeader('Content-disposition', 'attachment; filename="informe-transacciones.pdf"');
   res.setHeader('Content-type', 'application/pdf');
   doc.pipe(res);
 
   const table = {
-    title: "Transaction Report",
-    subtitle: "Generated Report",
+    title: "Informe de Transacciones",
+    subtitle: "Informe Generado",
     headers: [
-      { label: "Transaction ID", property: 'idTransaction', width: 100 },
-      { label: "Operation", property: 'tipoOperacion', width: 100, renderer: (val) => val.replace('tipo', '') },
-      { label: "Sent", property: 'cantidadEnvio', width: 100 },
-      { label: "Received", property: 'cantidadRecepcion', width: 100 },
-      { label: "Bank", property: 'bancoDestino', width: 100 }
+      { label: "ID de Transacción", property: 'idTransaction', width: 100 },
+      { label: "Operación", property: 'tipoOperacion', width: 100, renderer: (val) => val.replace('tipo', '') },
+      { label: "Enviado", property: 'cantidadEnvio', width: 100 },
+      { label: "Recibido", property: 'cantidadRecepcion', width: 100 },
+      { label: "Banco", property: 'bancoDestino', width: 100 },
+      { label: "Nombre", property: 'usuarioId.nombre', width: 100 },
+      { label: "Apellido", property: 'usuarioId.apellido', width: 100 },
+      { label: "DNI", property: 'usuarioId.dni', width: 100 },
+      { label: "Correo", property: 'usuarioId.email', width: 150 }
     ],
     datas: transactions.map(tx => ({
       idTransaction: tx.idTransaction,
       tipoOperacion: tx.tipoOperacion,
       cantidadEnvio: tx.cantidadEnvio.toString(),
       cantidadRecepcion: tx.cantidadRecepcion.toString(),
-      bancoDestino: tx.bancoDestino
+      bancoDestino: tx.bancoDestino,
+      usuarioId: tx.usuarioId // Asegúrate que esta propiedad mapee correctamente
     }))
   };
 
@@ -64,17 +72,17 @@ exports.downloadTransactionsReport = async (req, res) => {
 function adjustDateRangeQuery(query, dateRange) {
   const now = new Date();
   if (dateRange === 'today') {
-    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(now.setHours(23, 59, 59, 999));
-    query.createdAt = { $gte: startOfDay, $lte: endOfDay };
+    query.createdAt = { $gte: new Date(now.setHours(0, 0, 0, 0)), $lte: new Date(now.setHours(23, 59, 59, 999)) };
   } else if (dateRange === 'week') {
     const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-    const endOfWeek = new Date(now.setDate(startOfWeek.getDate() + 6));
     startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
     query.createdAt = { $gte: startOfWeek, $lte: endOfWeek };
   }
 }
+
 
 
 
