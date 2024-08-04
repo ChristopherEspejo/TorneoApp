@@ -7,61 +7,50 @@ const resend = new Resend(environments.APIKEY_RESEND);
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 
+
+
 exports.downloadTransactionsReport = async (req, res) => {
-  try {
-    const uid = req.user.uid; // Usas el UID obtenido por tu middleware de autenticación
-    const user = await User.findById(uid); // Buscas el usuario en la base de datos para obtener su rol
-
-    if (!user || user.rol !== 'admin') {
-      return res.status(403).send('Acceso denegado. Sólo los administradores pueden realizar esta acción.');
-    }
-
-    const { dateRange } = req.query; // 'today' o 'week' como ejemplo
-    let query = { estado: 'culminado' };
-    if (dateRange === 'today') {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      query.createdAt = { $gte: startOfDay, $lte: endOfDay };
-    } else if (dateRange === 'week') {
-      const today = new Date();
-      const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-      startOfWeek.setHours(0, 0, 0, 0);
-      const endOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 6));
-      endOfWeek.setHours(23, 59, 59, 999);
-      query.createdAt = { $gte: startOfWeek, $lte: endOfWeek };
-    }
-
-    const transactions = await Transaction.find(query);
-    if (transactions.length === 0) {
-      return res.status(404).send('No transactions completed in this period');
-    }
-
-    // Crear un documento PDF
-    const doc = new PDFDocument();
-    res.setHeader('Content-disposition', 'attachment; filename="transactions-report.pdf"');
-    res.setHeader('Content-type', 'application/pdf');
-    doc.pipe(res);
-
-    // Agregar contenido al PDF
-    doc.fontSize(16).text('Transactions Report', { align: 'center' });
-    transactions.forEach(transaction => {
-      doc.fontSize(12).text(`Transaction ID: ${transaction._id}`, { align: 'left' });
-      doc.text(`Tipo de Operación: ${transaction.tipoOperacion}`, { align: 'left' });
-      doc.text(`Cantidad Enviada: ${transaction.cantidadEnvio}`, { align: 'left' });
-      doc.text(`Cantidad Recibida: ${transaction.cantidadRecepcion}`, { align: 'left' });
-      doc.text(`Banco Destino: ${transaction.bancoDestino}`, { align: 'left' });
-      doc.text(`Número de Cuenta: ${transaction.numeroCuentaInterbancario}`, { align: 'left' });
-      doc.text(`------------------------------------------`, { align: 'center' });
-    });
-
-    doc.end(); // Finalizar el documento
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error generating the report');
+  const uid = req.user.uid;
+  const user = await User.findById(uid);
+  if (!user || user.rol !== 'admin') {
+    return res.status(403).send('Acceso denegado. Sólo los administradores pueden realizar esta acción.');
   }
+
+  const { dateRange } = req.query;
+  let query = { estado: 'culminado' };
+  adjustDateRangeQuery(query, dateRange);
+
+  const transactions = await Transaction.find(query);
+  if (transactions.length === 0) {
+    return res.status(404).send('No transactions completed in this period');
+  }
+
+  // Crear el documento PDF y enviarlo al cliente
+  const doc = new PDFDocument();
+  res.setHeader('Content-disposition', 'attachment; filename="transactions-report.pdf"');
+  res.setHeader('Content-type', 'application/pdf');
+  doc.pipe(res);
+
+  doc.fontSize(16).text('Transactions Report', { align: 'center' }).moveDown();
+  doc.fontSize(12).text('ID', 70).text('Operation', 150).text('Sent', 280).text('Received', 410).text('Bank', 540).moveDown(0.5);
+  transactions.forEach(t => {
+    doc.text(t.idTransaction, 70).text(t.tipoOperacion.replace('tipo', ''), 150).text(`${t.cantidadEnvio}`, 280).text(`${t.cantidadRecepcion}`, 410).text(t.bancoDestino, 540).moveDown(0.5);
+  });
+
+  doc.end();
 };
+
+function adjustDateRangeQuery(query, dateRange) {
+  const now = new Date();
+  if (dateRange === 'today') {
+    query.createdAt = { $gte: new Date(now.setHours(0, 0, 0, 0)), $lte: new Date(now.setHours(23, 59, 59, 999)) };
+  } else if (dateRange === 'week') {
+    let start = now.getDate() - now.getDay();
+    let end = start + 6; // Last day of the week
+    query.createdAt = { $gte: new Date(now.setDate(start)), $lte: new Date(now.setDate(end)) };
+  }
+}
+
 
 
 exports.verifyTipoCambio = async (req, res) => {
