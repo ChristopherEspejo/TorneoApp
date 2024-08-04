@@ -22,8 +22,7 @@ exports.downloadTransactionsReport = async (req, res) => {
   let query = { estado: 'culminado' };
   adjustDateRangeQuery(query, dateRange);
 
-  const transactions = await Transaction.find(query)
-    .populate('usuarioId', 'nombre apellido dni email');
+  const transactions = await Transaction.find(query).populate('usuarioId');
 
   if (transactions.length === 0) {
     return res.status(404).send('No se encontraron transacciones completadas en este período.');
@@ -37,31 +36,24 @@ exports.downloadTransactionsReport = async (req, res) => {
   const table = {
     title: "Informe de Transacciones",
     subtitle: "Informe Generado",
-    headers: [
-      { label: "ID de Transacción", property: 'idTransaction', width: 50 },
-      { label: "Operación", property: 'tipoOperacion', width: 50, renderer: val => val.replace('tipo', '') },
-      { label: "Enviado", property: 'cantidadEnvio', width: 50 },
-      { label: "Recibido", property: 'cantidadRecepcion', width: 50 },
-      { label: "Banco", property: 'bancoDestino', width: 50 },
-      { label: "Nombre", property: 'usuarioId.nombre', width: 50 },
-      { label: "Apellido", property: 'usuarioId.apellido', width: 50 },
-      { label: "DNI", property: 'usuarioId.dni', width: 50 },
-      { label: "Correo", property: 'usuarioId.email', width: 50 }
-    ],
-    datas: transactions.map(tx => ({
-      idTransaction: tx.idTransaction,
-      tipoOperacion: tx.tipoOperacion,
-      cantidadEnvio: tx.cantidadEnvio.toString(),
-      cantidadRecepcion: tx.cantidadRecepcion.toString(),
-      bancoDestino: tx.bancoDestino,
-      usuarioId: tx.usuarioId // Asegurarse que esta propiedad mapee correctamente
-    }))
+    headers: ["ID de Transacción", "Operación", "Enviado", "Recibido", "Banco", "Nombre", "Apellido", "DNI", "Correo"],
+    rows: transactions.map(tx => [
+      tx.idTransaction,
+      tx.tipoOperacion.replace('tipo', ''),
+      tx.cantidadEnvio.toString(),
+      tx.cantidadRecepcion.toString(),
+      tx.bancoDestino,
+      tx.usuarioId.nombre,
+      tx.usuarioId.apellido,
+      tx.usuarioId.dni,
+      tx.usuarioId.email || 'No disponible'
+    ])
   };
 
   await doc.table(table, {
-    prepareHeader: () => doc.font("Helvetica-Bold").fontSize(8),
+    prepareHeader: () => doc.font("Helvetica-Bold").fontSize(10),
     prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
-      doc.font("Helvetica").fontSize(8);
+      doc.font("Helvetica").fontSize(10);
     },
   });
 
@@ -73,7 +65,8 @@ function adjustDateRangeQuery(query, dateRange) {
   if (dateRange === 'today') {
     query.createdAt = { $gte: new Date(now.setHours(0, 0, 0, 0)), $lte: new Date(now.setHours(23, 59, 59, 999)) };
   } else if (dateRange === 'week') {
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    const startOfWeek = new Date();
+    startOfWeek.setDate(now.getDate() - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
