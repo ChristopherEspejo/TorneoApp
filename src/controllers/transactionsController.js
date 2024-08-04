@@ -6,6 +6,8 @@ const environments = require('../config/environments');
 const resend = new Resend(environments.APIKEY_RESEND);
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+const shortid = require('shortid');
+
 
 
 
@@ -76,16 +78,17 @@ exports.verifyTipoCambio = async (req, res) => {
 
 exports.createTransaction = async (req, res) => {
   try {
-    // Extrae el usuarioId del objeto user añadido por el middleware de autenticación
     const usuarioId = req.user.uid;
-    
     const { tipoOperacion, cantidadEnvio, numeroCuentaInterbancario, tipoCuenta, bancoDestino } = req.body;
     const currentChangeType = await ChangeType.findOne();
     const tipoCambio = tipoOperacion === 'tipoCompra' ? currentChangeType.tipoCompra : currentChangeType.tipoVenta;
     const cantidadRecepcion = calcularCantidadRecepcion(cantidadEnvio, tipoCambio, tipoOperacion);
 
+    // Generar un ID de transacción corto
+    const idTransaction = shortid.generate();
+
     const newTransaction = new Transaction({
-      usuarioId, // Usado directamente desde el token
+      usuarioId,
       tipoOperacion,
       tipoCambio,
       estado: 'espera',
@@ -94,6 +97,7 @@ exports.createTransaction = async (req, res) => {
       numeroCuentaInterbancario,
       tipoCuenta,
       bancoDestino,
+      idTransaction 
     });
 
     await newTransaction.save();
@@ -103,6 +107,7 @@ exports.createTransaction = async (req, res) => {
     res.status(500).send('Error al crear la transacción');
   }
 };
+
 
 
 exports.updateTransaction = async (req, res) => {
