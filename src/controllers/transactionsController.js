@@ -63,17 +63,28 @@ exports.downloadTransactionsReport = async (req, res) => {
 function adjustDateRangeQuery(query, dateRange) {
   const now = new Date();
   if (dateRange === 'today') {
-    query.createdAt = { $gte: new Date(now.setHours(0, 0, 0, 0)), $lte: new Date(now.setHours(23, 59, 59, 999)) };
+    query.createdAt = {
+      $gte: new Date(now.setHours(0, 0, 0, 0)), // Inicio del día actual a medianoche
+      $lte: new Date(now.setHours(23, 59, 59, 999)) // Fin del día actual un minuto antes de medianoche
+    };
   } else if (dateRange === 'week') {
-    const startOfWeek = new Date();
-    startOfWeek.setDate(now.getDate() - now.getDay());
+    // Ajustar al lunes de la semana actual
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); // Si es domingo, retrocede 6 días, si no, resta el número de días para llegar al lunes
     startOfWeek.setHours(0, 0, 0, 0);
+
+    // Ajustar al domingo de la misma semana
     const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Sumar 6 días para llegar al domingo
     endOfWeek.setHours(23, 59, 59, 999);
-    query.createdAt = { $gte: startOfWeek, $lte: endOfWeek };
+
+    query.createdAt = {
+      $gte: startOfWeek,
+      $lte: endOfWeek
+    };
   }
 }
+
 
 
 
