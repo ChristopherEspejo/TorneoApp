@@ -13,7 +13,6 @@ const shortid = require('shortid');
 exports.downloadTransactionsReport = async (req, res) => {
   const uid = req.user.uid;
   const user = await User.findById(uid);
-
   if (!user || user.rol !== 'admin') {
     return res.status(403).send('Acceso denegado. Sólo los administradores pueden realizar esta acción.');
   }
@@ -65,13 +64,18 @@ exports.downloadTransactionsReport = async (req, res) => {
 function adjustDateRangeQuery(query, dateRange) {
   const now = new Date();
   if (dateRange === 'today') {
-    query.createdAt = { $gte: new Date(now.setHours(0, 0, 0, 0)), $lte: new Date(now.setHours(23, 59, 59, 999)) };
+    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+    query.createdAt = { $gte: startOfDay, $lte: endOfDay };
   } else if (dateRange === 'week') {
-    let start = now.getDate() - now.getDay();
-    let end = start + 6;
-    query.createdAt = { $gte: new Date(now.setDate(start)), $lte: new Date(now.setDate(end)) };
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    const endOfWeek = new Date(now.setDate(startOfWeek.getDate() + 6));
+    startOfWeek.setHours(0, 0, 0, 0);
+    endOfWeek.setHours(23, 59, 59, 999);
+    query.createdAt = { $gte: startOfWeek, $lte: endOfWeek };
   }
 }
+
 
 
 
