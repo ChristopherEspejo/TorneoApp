@@ -67,13 +67,12 @@ function adjustDateRangeQuery(query, dateRange) {
 
   if (dateRange === 'today') {
     query.createdAt = {
-      $gte: now.startOf('day').toDate(), // Inicio del día actual
-      $lte: now.endOf('day').toDate()    // Fin del día actual
+      $gte: now.startOf('day').toDate(), // Inicio del día actual a medianoche
+      $lte: now.endOf('day').toDate()    // Fin del día actual un minuto antes de medianoche
     };
   } else if (dateRange === 'week') {
-    // Asegurarte de que la semana comience el lunes y termine el domingo
-    let startOfWeek = now.clone().startOf('week').add(1, 'days').toDate(); // Inicia la semana en lunes
-    let endOfWeek = now.clone().endOf('week').add(1, 'days').toDate();     // Termina la semana en domingo
+    let startOfWeek = now.startOf('isoWeek').toDate(); // Comienza la semana en lunes según ISO
+    let endOfWeek = now.endOf('isoWeek').toDate();     // Termina la semana en domingo
 
     query.createdAt = {
       $gte: startOfWeek,
