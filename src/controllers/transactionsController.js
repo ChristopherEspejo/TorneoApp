@@ -62,21 +62,28 @@ exports.downloadTransactionsReport = async (req, res) => {
 
 function adjustDateRangeQuery(query, dateRange) {
   const now = new Date();
+  const timezoneOffset = 5 * 60; // Ajuste de 5 horas para GMT-5
+
   if (dateRange === 'today') {
+    // Compensar la zona horaria para inicio y fin del día
+    const startOfDay = new Date(now.setHours(0 - timezoneOffset, 0, 0, 0));
+    const endOfDay = new Date(now.setHours(23 - timezoneOffset, 59, 59, 999));
+
     query.createdAt = {
-      $gte: new Date(now.setHours(0, 0, 0, 0)), // Inicio del día actual a medianoche
-      $lte: new Date(now.setHours(23, 59, 59, 999)) // Fin del día actual un minuto antes de medianoche
+      $gte: startOfDay,
+      $lte: endOfDay
     };
   } else if (dateRange === 'week') {
-    // Ajustar al lunes de la semana actual
+    // Ajustar al lunes de la semana actual considerando la zona horaria
+    const dayOfWeek = now.getUTCDay(); // 0 (domingo) a 6 (sábado)
     const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); // Si es domingo, retrocede 6 días, si no, resta el número de días para llegar al lunes
-    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setUTCDate(now.getUTCDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    startOfWeek.setUTCHours(0 - timezoneOffset, 0, 0, 0);
 
     // Ajustar al domingo de la misma semana
     const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // Sumar 6 días para llegar al domingo
-    endOfWeek.setHours(23, 59, 59, 999);
+    endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
+    endOfWeek.setUTCHours(23 - timezoneOffset, 59, 59, 999);
 
     query.createdAt = {
       $gte: startOfWeek,
@@ -84,6 +91,7 @@ function adjustDateRangeQuery(query, dateRange) {
     };
   }
 }
+
 
 
 
