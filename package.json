@@ -18,6 +18,8 @@
     "express-jwt": "^8.4.1",
     "firebase-admin": "^11.9.0",
     "jsonwebtoken": "^9.0.0",
+    "moment": "^2.30.1",
+    "moment-timezone": "^0.5.45",
     "mongoose": "^7.2.3",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.3",

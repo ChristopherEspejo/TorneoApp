@@ -6,7 +6,7 @@ const environments = require('../config/environments');
 const resend = new Resend(environments.APIKEY_RESEND);
 const PDFDocument = require('pdfkit-table');
 const shortid = require('shortid');
-
+const moment = require('moment-timezone');
 
 
 
@@ -61,33 +61,17 @@ exports.downloadTransactionsReport = async (req, res) => {
 };
 
 function adjustDateRangeQuery(query, dateRange) {
-  const now = new Date();
-  const timezoneOffset = 5 * 60; // Ajuste de 5 horas para GMT-5
+  const now = moment().tz("America/Lima"); // Ajustar a la zona horaria de Perú directamente
 
   if (dateRange === 'today') {
-    // Compensar la zona horaria para inicio y fin del día
-    const startOfDay = new Date(now.setHours(0 - timezoneOffset, 0, 0, 0));
-    const endOfDay = new Date(now.setHours(23 - timezoneOffset, 59, 59, 999));
-
     query.createdAt = {
-      $gte: startOfDay,
-      $lte: endOfDay
+      $gte: now.startOf('day').toDate(),
+      $lte: now.endOf('day').toDate()
     };
   } else if (dateRange === 'week') {
-    // Ajustar al lunes de la semana actual considerando la zona horaria
-    const dayOfWeek = now.getUTCDay(); // 0 (domingo) a 6 (sábado)
-    const startOfWeek = new Date(now);
-    startOfWeek.setUTCDate(now.getUTCDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-    startOfWeek.setUTCHours(0 - timezoneOffset, 0, 0, 0);
-
-    // Ajustar al domingo de la misma semana
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
-    endOfWeek.setUTCHours(23 - timezoneOffset, 59, 59, 999);
-
     query.createdAt = {
-      $gte: startOfWeek,
-      $lte: endOfWeek
+      $gte: now.startOf('week').toDate(), // Esto considera el lunes como inicio de la semana
+      $lte: now.endOf('week').toDate()
     };
   }
 }
