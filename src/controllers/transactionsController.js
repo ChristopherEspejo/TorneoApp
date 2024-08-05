@@ -60,21 +60,28 @@ exports.downloadTransactionsReport = async (req, res) => {
   doc.end();
 };
 
+
+
 function adjustDateRangeQuery(query, dateRange) {
   const now = moment().tz("America/Lima"); // Ajustar a la zona horaria de Perú directamente
 
   if (dateRange === 'today') {
     query.createdAt = {
-      $gte: now.startOf('day').toDate(),
-      $lte: now.endOf('day').toDate()
+      $gte: now.startOf('day').toDate(), // Inicio del día actual
+      $lte: now.endOf('day').toDate()    // Fin del día actual
     };
   } else if (dateRange === 'week') {
+    // Asegurarte de que la semana comience el lunes y termine el domingo
+    let startOfWeek = now.clone().startOf('week').add(1, 'days').toDate(); // Inicia la semana en lunes
+    let endOfWeek = now.clone().endOf('week').add(1, 'days').toDate();     // Termina la semana en domingo
+
     query.createdAt = {
-      $gte: now.startOf('week').toDate(), // Esto considera el lunes como inicio de la semana
-      $lte: now.endOf('week').toDate()
+      $gte: startOfWeek,
+      $lte: endOfWeek
     };
   }
 }
+
 
 
 
@@ -104,6 +111,15 @@ exports.verifyTipoCambio = async (req, res) => {
 
 exports.createTransaction = async (req, res) => {
   try {
+    // Configurar la zona horaria de Perú
+    const peruTime = moment().tz('America/Lima');
+    const hour = peruTime.hour();
+
+    // Verificar si está dentro del horario de atención
+    if (hour < 9 || hour >= 18) {
+      return res.status(400).send('Error: Fuera del horario de atención. Horario de atención: 9 AM a 6 PM.');
+    }
+
     const usuarioId = req.user.uid;
     const { tipoOperacion, cantidadEnvio, numeroCuentaInterbancario, tipoCuenta, bancoDestino } = req.body;
     const currentChangeType = await ChangeType.findOne();
