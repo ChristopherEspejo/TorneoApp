@@ -115,7 +115,7 @@ exports.createTransaction = async (req, res) => {
     const hour = peruTime.hour();
 
     // Verificar si está dentro del horario de atención
-    if (hour < 9 || hour >= 18) {
+    if (hour < 9 || hour >= 22) {
       return res.status(400).send('Error: Fuera del horario de atención. Horario de atención: 9 AM a 6 PM.');
     }
 
