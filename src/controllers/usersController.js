@@ -17,7 +17,9 @@ exports.profile = async (req, res) => {
           apellido: usuario.apellido,
           dni: usuario.dni,
           email: usuario.email,
-          rol: usuario.rol
+          rol: usuario.rol,
+          cc: usuario.cc,
+          cci: usuario.cci
         }
       });
     } else {
