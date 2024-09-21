@@ -9,6 +9,8 @@ const usuarioSchema = new Schema({
   dni: { type: String, required: true, unique: true },
   email: { type: String, required: false},
   rol: { type: String, default: 'usuario', enum: ['usuario', 'admin'] },
+  cc: { type: String, required: false },
+  cci: { type: String, required: false },
   // Otros campos relevantes para tu aplicación...
 }, { timestamps: true });
 

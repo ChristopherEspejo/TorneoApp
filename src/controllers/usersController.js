@@ -103,7 +103,7 @@ exports.register = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const uid = req.user.uid; // Usas el UID obtenido por tu middleware de autenticación
-    const { nombre, apellido, dni, email } = req.body;
+    const { nombre, apellido, dni, email, cc, cci } = req.body;
 
     // Crea un objeto con los campos que pueden ser actualizados
     const updateData = {};
@@ -111,6 +111,8 @@ exports.updateUser = async (req, res) => {
     if (apellido) updateData.apellido = apellido;
     if (dni) updateData.dni = dni;
     if (email) updateData.email = email;
+    if (cc) updateData.cc = cc;
+    if (cci) updateData.cci = cci;
 
     // Actualiza el usuario
     const updatedUser = await User.findByIdAndUpdate(uid, updateData, { new: true });
@@ -124,7 +126,9 @@ exports.updateUser = async (req, res) => {
           apellido: updatedUser.apellido,
           dni: updatedUser.dni,
           email: updatedUser.email,
-          rol: updatedUser.rol
+          rol: updatedUser.rol,
+          cc: updatedUser.cc,
+          cci: updatedUser.cci
         }
       });
     } else {
