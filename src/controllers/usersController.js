@@ -63,7 +63,7 @@ exports.login = async (req, res) => {
 
 exports.register = async (req, res) => {
   try {
-    const { nombre, apellido, dni, email } = req.body;
+    const { nombre, apellido, dni, email,tipoPersona } = req.body;
     const uid = req.user.uid; // UID extraído del token de Firebase
 
     // Verificar si ya existe un usuario con el mismo UID
@@ -78,7 +78,8 @@ exports.register = async (req, res) => {
       nombre,
       apellido,
       dni,
-      email
+      email,
+      tipoPersona
       // El rol por defecto se establece en 'usuario' según la definición del modelo
     });
 
@@ -93,6 +94,7 @@ exports.register = async (req, res) => {
         apellido,
         dni,
         email,
+        tipoPersona: newUser.tipoPersona,
         rol: newUser.rol // Esto devolverá 'usuario' como valor predeterminado
       }
     });
