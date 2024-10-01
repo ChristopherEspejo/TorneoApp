@@ -312,10 +312,10 @@ function calcularCantidadRecepcion(cantidadEnvio, tipoCambio,tipoOperacion) {
   // Esta es una implementación de ejemplo. Debes ajustarla según tu caso de uso específico.
 
   if(tipoOperacion === 'tipoCompra'){
-    return (cantidadEnvio / tipoCambio).toFixed(3);
+    return (cantidadEnvio * tipoCambio).toFixed(3);
   }
   else if(tipoOperacion === 'tipoVenta'){
-    return (cantidadEnvio * tipoCambio).toFixed(3) ;
+    return (cantidadEnvio / tipoCambio).toFixed(3) ;
   }
 
 }
