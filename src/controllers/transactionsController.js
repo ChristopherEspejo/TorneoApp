@@ -186,7 +186,15 @@ exports.updateTransaction = async (req, res) => {
         <body>
           <div class="header">Estado de Transacción: Pendiente</div>
           <p>Estimado ${user.nombre},</p>
-          <p>Gracias por confiar en nosotros. Hemos recibido tu solicitud y estamos revisando tu operación. Por favor, espera mientras verificamos los detalles y te informaremos pronto sobre la conformidad.</p>
+          <p>Gracias por confiar en nosotros. Hemos recibido tu solicitud y estamos revisando tu operación. Aquí están los detalles de la transacción:</p>
+          <div class="info">
+            <p><strong>Tipo de Operación:</strong> ${transaction.tipoOperacion === 'tipoVenta' ? 'Compra' : 'Venta'}</p>
+            <p><strong>Cantidad Enviada:</strong> ${transaction.cantidadEnvio} ${transaction.tipoOperacion === 'tipoVenta' ? 'PEN' : 'USD'}</p>
+            <p><strong>Cantidad a Recibir:</strong> ${transaction.cantidadRecepcion} ${transaction.tipoOperacion === 'tipoVenta' ? 'USD' : 'PEN'}</p>
+            <p><strong>Banco Destino:</strong> ${transaction.bancoDestino}</p>
+            <p><strong>Número de Cuenta:</strong> ${transaction.numeroCuentaInterbancario}</p>
+          </div>
+          <p>Por favor, espera mientras verificamos los detalles y te informaremos pronto sobre la conformidad.</p>
           <div class="footer">
             Gracias por usar nuestros servicios. Si tienes alguna pregunta, no dudes en contactarnos.
           </div>
@@ -212,6 +220,7 @@ exports.updateTransaction = async (req, res) => {
     res.status(500).send('Error al actualizar la transacción');
   }
 };
+
 
 
 exports.cancelTransaction = async (req, res) => {
