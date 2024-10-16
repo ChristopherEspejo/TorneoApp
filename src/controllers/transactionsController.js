@@ -165,12 +165,54 @@ exports.updateTransaction = async (req, res) => {
     transaction.estado = 'pendiente';
     await transaction.save();
 
+    const user = await User.findById(transaction.usuarioId);
+    if (!user) {
+      return res.status(404).send('Usuario no encontrado');
+    }
+
+    // Enviar correo en un bloque try-catch separado para no afectar el flujo principal
+    if (user.email) {
+      try {
+        const htmlContent = `
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; }
+            .header { color: #2E5984; font-size: 20px; font-weight: bold; }
+            .info { background-color: #f2f2f2; padding: 10px; border-radius: 5px; }
+            .footer { margin-top: 20px; font-size: 16px; color: #444; }
+          </style>
+        </head>
+        <body>
+          <div class="header">Estado de Transacción: Pendiente</div>
+          <p>Estimado ${user.nombre},</p>
+          <p>Gracias por confiar en nosotros. Hemos recibido tu solicitud y estamos revisando tu operación. Por favor, espera mientras verificamos los detalles y te informaremos pronto sobre la conformidad.</p>
+          <div class="footer">
+            Gracias por usar nuestros servicios. Si tienes alguna pregunta, no dudes en contactarnos.
+          </div>
+        </body>
+        </html>
+        `;
+
+        await resend.emails.send({
+          from: 'Cambialo <carlos.amorin@cambialo.com.pe>',
+          to: [user.email],
+          subject: 'Estado de Transacción: Pendiente',
+          html: htmlContent
+        });
+      } catch (emailError) {
+        console.error('Error al enviar el correo electrónico:', emailError);
+        // No se detiene el proceso, se continúa sin afectar la transacción
+      }
+    }
+
     res.json(transaction);
   } catch (error) {
     console.error(error);
     res.status(500).send('Error al actualizar la transacción');
   }
 };
+
 
 exports.cancelTransaction = async (req, res) => {
   try {
@@ -253,58 +295,56 @@ exports.completeTransaction = async (req, res) => {
     transaction.estado = 'culminado';
     await transaction.save();
 
+    // Enviar correo en un bloque try-catch separado para no afectar el flujo principal
     if (user.email) {
-      const htmlContent = `
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; }
-          .header { color: #2E5984; font-size: 20px; font-weight: bold; }
-          .info { background-color: #f2f2f2; padding: 10px; border-radius: 5px; }
-          .footer { margin-top: 20px; font-size: 16px; color: #444; }
-        </style>
-      </head>
-      <body>
-        <div class="header">Confirmación de Transacción</div>
-        <p>Estimado ${user.nombre},</p>
-        <p>Tu transacción ha sido completada exitosamente con los siguientes detalles:</p>
-        <div class="info">
-          <p><strong>Tipo de Operación:</strong> ${transaction.tipoOperacion === 'tipoCompra' ? 'Compra' : 'Venta'}</p>
-          <p><strong>Cantidad Enviada:</strong> ${transaction.cantidadEnvio} ${transaction.tipoOperacion === 'tipoCompra' ? 'PEN' : 'USD'}</p>
-          <p><strong>Cantidad Recibida:</strong> ${transaction.cantidadRecepcion} ${transaction.tipoOperacion === 'tipoCompra' ? 'USD' : 'PEN'}</p>
-          <p><strong>Banco Destino:</strong> ${transaction.bancoDestino}</p>
-          <p><strong>Número de Cuenta:</strong> ${transaction.numeroCuentaInterbancario}</p>
-        </div>
-        <div class="footer">
-          Gracias por usar nuestros servicios. Si tienes alguna pregunta, no dudes en contactarnos.
-        </div>
-      </body>
-      </html>
-      `;  // Tu HTML aquí
+      try {
+        const htmlContent = `
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; }
+            .header { color: #2E5984; font-size: 20px; font-weight: bold; }
+            .info { background-color: #f2f2f2; padding: 10px; border-radius: 5px; }
+            .footer { margin-top: 20px; font-size: 16px; color: #444; }
+          </style>
+        </head>
+        <body>
+          <div class="header">Confirmación de Transacción</div>
+          <p>Estimado ${user.nombre},</p>
+          <p>Tu transacción ha sido completada exitosamente con los siguientes detalles:</p>
+          <div class="info">
+            <p><strong>Tipo de Operación:</strong> ${transaction.tipoOperacion === 'tipoVenta' ? 'Compra' : 'Venta'}</p>
+            <p><strong>Cantidad Enviada:</strong> ${transaction.cantidadEnvio} ${transaction.tipoOperacion === 'tipoVenta' ? 'PEN' : 'USD'}</p>
+            <p><strong>Cantidad Recibida:</strong> ${transaction.cantidadRecepcion} ${transaction.tipoOperacion === 'tipoVenta' ? 'USD' : 'PEN'}</p>
+            <p><strong>Banco Destino:</strong> ${transaction.bancoDestino}</p>
+            <p><strong>Número de Cuenta:</strong> ${transaction.numeroCuentaInterbancario}</p>
+          </div>
+          <div class="footer">
+            Gracias por usar nuestros servicios. Si tienes alguna pregunta, no dudes en contactarnos.
+          </div>
+        </body>
+        </html>
+        `;
 
-      // Intentar enviar el correo electrónico
-      const { data, error } = await resend.emails.send({
-        from: 'Cambialo <carlos.amorin@cambialo.com.pe>',
-        to: [user.email],
-        subject: 'Confirmación de Transacción',
-        html: htmlContent
-      });
-
-      if (error) {
-        console.error(error);
-        return res.status(500).send('Error al enviar el correo electrónico');
+        await resend.emails.send({
+          from: 'Cambialo <carlos.amorin@cambialo.com.pe>',
+          to: [user.email],
+          subject: 'Confirmación de Transacción',
+          html: htmlContent
+        });
+      } catch (emailError) {
+        console.error('Error al enviar el correo electrónico:', emailError);
+        // No se detiene el proceso, se continúa sin afectar la transacción
       }
-
-      res.json({ message: 'Transacción culminada exitosamente', transaction, emailInfo: data });
-    } else {
-      // Si no hay correo, solo confirmar la culminación de la transacción
-      res.json({ message: 'Transacción culminada exitosamente', transaction });
     }
+
+    res.json({ message: 'Transacción culminada exitosamente', transaction });
   } catch (error) {
     console.error(error);
     res.status(500).send('Error al actualizar el estado de la transacción');
   }
 };
+
 
 
 // Asegúrate de implementar esta función según tu lógica de negocio para calcular la cantidad de recepción
