@@ -188,7 +188,7 @@ exports.updateTransaction = async (req, res) => {
           <p>Estimado ${user.nombre},</p>
           <p>Gracias por confiar en nosotros. Hemos recibido tu solicitud y estamos revisando tu operación. Aquí están los detalles de la transacción:</p>
           <div class="info">
-            <p><strong>Tipo de Operación:</strong> ${transaction.tipoOperacion === 'tipoVenta' ? 'Compra' : 'Venta'}</p>
+            <p><strong>Tipo de Operación:</strong> ${transaction.tipoOperacion === 'tipoVenta' ? 'Venta' : 'Compra'}</p>
             <p><strong>Cantidad Enviada:</strong> ${transaction.cantidadEnvio} ${transaction.tipoOperacion === 'tipoVenta' ? 'PEN' : 'USD'}</p>
             <p><strong>Cantidad a Recibir:</strong> ${transaction.cantidadRecepcion} ${transaction.tipoOperacion === 'tipoVenta' ? 'USD' : 'PEN'}</p>
             <p><strong>Banco Destino:</strong> ${transaction.bancoDestino}</p>
@@ -322,7 +322,7 @@ exports.completeTransaction = async (req, res) => {
           <p>Estimado ${user.nombre},</p>
           <p>Tu transacción ha sido completada exitosamente con los siguientes detalles:</p>
           <div class="info">
-            <p><strong>Tipo de Operación:</strong> ${transaction.tipoOperacion === 'tipoVenta' ? 'Compra' : 'Venta'}</p>
+            <p><strong>Tipo de Operación:</strong> ${transaction.tipoOperacion === 'tipoVenta' ? 'Venta' : 'Compra'}</p>
             <p><strong>Cantidad Enviada:</strong> ${transaction.cantidadEnvio} ${transaction.tipoOperacion === 'tipoVenta' ? 'PEN' : 'USD'}</p>
             <p><strong>Cantidad Recibida:</strong> ${transaction.cantidadRecepcion} ${transaction.tipoOperacion === 'tipoVenta' ? 'USD' : 'PEN'}</p>
             <p><strong>Banco Destino:</strong> ${transaction.bancoDestino}</p>
