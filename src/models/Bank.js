@@ -9,7 +9,7 @@ const companyBankSchema = new Schema({
   currency: { type: String, required: true },
   bankName: { type: String, required: true },
   accountNumber: { type: String, required: true },
-  cci: { type: String, required: true }
+  cci: { type: String, required: false, default: '' }
 }, { collection: 'companybanks', timestamps: true });
 
 // Schema para Bank
